@@ -1,6 +1,6 @@
 <?php 
 
-namespace Baspa\Enums;
+namespace Baspa\Timezones\Enums;
 
 enum HtmlEntity: string
 {
