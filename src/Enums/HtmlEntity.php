@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Baspa\Timezones\Enums;
 
