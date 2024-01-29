@@ -2,24 +2,24 @@
 
 namespace Baspa\Timezones;
 
+use Baspa\Timezones\Enums\HtmlEntity;
 use DateTime;
 use DateTimeZone;
-use Baspa\Timezones\Enums\HtmlEntity;
 
 class Timezones
 {
     /** @var array<string, int> */
     protected $continents = [
-        'Africa'     => DateTimeZone::AFRICA,
-        'America'    => DateTimeZone::AMERICA,
+        'Africa' => DateTimeZone::AFRICA,
+        'America' => DateTimeZone::AMERICA,
         'Antarctica' => DateTimeZone::ANTARCTICA,
-        'Arctic'     => DateTimeZone::ARCTIC,
-        'Asia'       => DateTimeZone::ASIA,
-        'Atlantic'   => DateTimeZone::ATLANTIC,
-        'Australia'  => DateTimeZone::AUSTRALIA,
-        'Europe'     => DateTimeZone::EUROPE,
-        'Indian'     => DateTimeZone::INDIAN,
-        'Pacific'    => DateTimeZone::PACIFIC,
+        'Arctic' => DateTimeZone::ARCTIC,
+        'Asia' => DateTimeZone::ASIA,
+        'Atlantic' => DateTimeZone::ATLANTIC,
+        'Australia' => DateTimeZone::AUSTRALIA,
+        'Europe' => DateTimeZone::EUROPE,
+        'Indian' => DateTimeZone::INDIAN,
+        'Pacific' => DateTimeZone::PACIFIC,
     ];
 
     /** @var array<string, string> */
@@ -38,11 +38,11 @@ class Timezones
         foreach ($this->loadContinents() as $continent => $timezoneGroup) {
             $timezones = DateTimeZone::listIdentifiers(timezoneGroup: $timezoneGroup);
 
-            if (!$grouped) {
+            if (! $grouped) {
                 foreach ($timezones as $timezone) {
                     $list[$timezone] = $this->formatTimezone(
-                        timezone: $timezone, 
-                        cutOffContinent: $continent, 
+                        timezone: $timezone,
+                        cutOffContinent: $continent,
                         htmlencode: $htmlencode
                     );
                 }
@@ -52,8 +52,8 @@ class Timezones
 
             foreach ($timezones as $timezone) {
                 $list[$continent][$timezone] = $this->formatTimezone(
-                    timezone: $timezone, 
-                    cutOffContinent: $continent, 
+                    timezone: $timezone,
+                    cutOffContinent: $continent,
                     htmlencode: $htmlencode
                 );
             }
@@ -69,46 +69,46 @@ class Timezones
 
     protected function formatTimezone(string $timezone, ?string $cutOffContinent = null, bool $htmlencode = true): string
     {
-        $displayedTimezone = empty($cutOffContinent) ? 
-            $timezone : 
-            substr(string: $timezone, offset: strlen((string)$cutOffContinent) + 1);
+        $displayedTimezone = empty($cutOffContinent) ?
+            $timezone :
+            substr(string: $timezone, offset: strlen((string) $cutOffContinent) + 1);
 
         $normalizedTimezone = $this->normalizeTimezone(timezone: $displayedTimezone);
 
-        if (!$this->showOffset) {
+        if (! $this->showOffset) {
             return $normalizedTimezone;
         }
 
         $notmalizedOffset = $this->formatOffset(
-            offset: $this->getOffset($timezone), 
+            offset: $this->getOffset($timezone),
             htmlencode: $htmlencode
         );
 
         $separator = $this->formatSeparator(htmlencode: $htmlencode);
 
-        return '(' . $this->offsetPrefix . $notmalizedOffset . ')' . $separator . $normalizedTimezone;
+        return '('.$this->offsetPrefix.$notmalizedOffset.')'.$separator.$normalizedTimezone;
     }
 
     protected function formatOffset(string $offset, bool $htmlencode = true): string
     {
-        $search  = ['-', '+'];
-        $replace = $htmlencode ? [' ' . HtmlEntity::MINUS->value . ' ', ' ' . HtmlEntity::PLUS->value . ' '] : [' - ', ' + '];
+        $search = ['-', '+'];
+        $replace = $htmlencode ? [' '.HtmlEntity::MINUS->value.' ', ' '.HtmlEntity::PLUS->value.' '] : [' - ', ' + '];
 
         return str_replace(
-            search: $search, 
-            replace: $replace, 
+            search: $search,
+            replace: $replace,
             subject: $offset
         );
     }
 
     protected function normalizeTimezone(string $timezone): string
     {
-        $search  = ['St_', '/', '_'];
+        $search = ['St_', '/', '_'];
         $replace = ['St. ', ' / ', ' '];
 
         return str_replace(
-            search: $search, 
-            replace: $replace, 
+            search: $search,
+            replace: $replace,
             subject: $timezone
         );
     }
@@ -116,7 +116,7 @@ class Timezones
     protected function formatSeparator(bool $htmlencode = true): string
     {
         return $htmlencode ? str_repeat(
-            string: HtmlEntity::WHITESPACE->value, 
+            string: HtmlEntity::WHITESPACE->value,
             times: 5
         ) : ' ';
     }

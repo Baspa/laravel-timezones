@@ -2,7 +2,6 @@
 
 namespace Baspa\Timezones;
 
-use Baspa\Timezones\Commands\TimezonesCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
