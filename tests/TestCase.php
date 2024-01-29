@@ -2,9 +2,9 @@
 
 namespace Baspa\Timezones\Tests;
 
+use Baspa\Timezones\TimezonesServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Baspa\Timezones\TimezonesServiceProvider;
 
 class TestCase extends Orchestra
 {
