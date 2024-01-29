@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Baspa\Timezones\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class TimezonesCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-timezones';
 
     public $description = 'My command';
 
