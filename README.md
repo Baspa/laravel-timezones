@@ -1,3 +1,7 @@
+<!-- Link to iamage in docs directory -->
+
+![Banner](/docs/banner.png)
+
 # Laravel package to generate arrays of available timezones to be used in lists.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/baspa/laravel-timezones.svg?style=flat-square)](https://packagist.org/packages/baspa/laravel-timezones)
@@ -5,7 +9,7 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/baspa/laravel-timezones/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/baspa/laravel-timezones/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/baspa/laravel-timezones.svg?style=flat-square)](https://packagist.org/packages/baspa/laravel-timezones)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+The Laravel Timezones package is a convenient solution for Laravel developers who need to include a dropdown menu of timezones in their applications. This package simplifies the process of incorporating a timezone selection feature, saving developers valuable time and effort.
 
 ## Installation
 
@@ -15,37 +19,16 @@ You can install the package via composer:
 composer require baspa/laravel-timezones
 ```
 
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="laravel-timezones-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="laravel-timezones-config"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="laravel-timezones-views"
-```
-
 ## Usage
 
 ```php
-$timezones = new Baspa\Timezones();
-echo $timezones->echoPhrase('Hello, Baspa!');
+use Baspa\Timezones\Facades\Timezones;
+
+// Timezones grouped by continent
+$groupedTimezones = Timezones::toArray(grouped: true);
+
+// All timezones 
+$timezones = Timezones::toArray();
 ```
 
 ## Testing
@@ -61,10 +44,6 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 ## Contributing
 
 Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
 
 ## Credits
 
