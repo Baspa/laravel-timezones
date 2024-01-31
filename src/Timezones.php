@@ -71,6 +71,13 @@ class Timezones
 
         return $this;
     }
+        
+    public function showOffset(bool $showOffset = true): self
+    {
+        $this->showOffset = $showOffset;
+
+        return $this;
+    }
 
     protected function loadContinents(): array
     {
@@ -136,5 +143,5 @@ class Timezones
         $time = new DateTime('', new DateTimeZone($timezone));
 
         return $time->format('P');
-    }    
+    }
 }

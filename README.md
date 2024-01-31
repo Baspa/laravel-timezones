@@ -21,22 +21,33 @@ composer require baspa/laravel-timezones
 
 ## Usage
 
+### Timezones grouped by continent
 ```php
 use Baspa\Timezones\Facades\Timezones;
-
-// Timezones grouped by continent
+// 
 $groupedTimezones = Timezones::toArray(grouped: true);
+```
 
-// All timezones 
+### All timezones 
+```php
+use Baspa\Timezones\Facades\Timezones;
+// 
 $timezones = Timezones::toArray();
+```
 
-// Exclude continents
+### Exclude continents
+```php
+use Baspa\Timezones\Facades\Timezones;
+// 
 $timezones = Timezones::excludeContinents(['Africa', 'America'])
     ->toArray();
+```
 
+### Show offset
+```php
+$timezones = Timezones::toArray()->showOffset();
 // or
-$timezones = Timezones::excludeContinents(['Africa', 'America'])
-    ->toArray(grouped: false, htmlencode: false);
+$timezones = Timezones::toArray()->showOffset(showOffset: false);
 ```
 
 ## Testing
