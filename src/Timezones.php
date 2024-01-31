@@ -62,6 +62,16 @@ class Timezones
         return $list;
     }
 
+    public function excludeContinents(array $continents): self
+    {
+        $this->continents = array_diff_key(
+            $this->continents,
+            array_flip(array: $continents)
+        );
+
+        return $this;
+    }
+
     protected function loadContinents(): array
     {
         return $this->continents;
@@ -126,5 +136,5 @@ class Timezones
         $time = new DateTime('', new DateTimeZone($timezone));
 
         return $time->format('P');
-    }
+    }    
 }

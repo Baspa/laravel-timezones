@@ -29,6 +29,14 @@ $groupedTimezones = Timezones::toArray(grouped: true);
 
 // All timezones 
 $timezones = Timezones::toArray();
+
+// Exclude continents
+$timezones = Timezones::excludeContinents(['Africa', 'America'])
+    ->toArray();
+
+// or
+$timezones = Timezones::excludeContinents(['Africa', 'America'])
+    ->toArray(grouped: false, htmlencode: false);
 ```
 
 ## Testing
