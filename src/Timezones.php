@@ -136,5 +136,5 @@ class Timezones
         $time = new DateTime('', new DateTimeZone($timezone));
 
         return $time->format('P');
-    }    
+    }
 }
