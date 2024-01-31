@@ -1,5 +1,3 @@
-<!-- Link to iamage in docs directory -->
-
 ![Banner](/docs/banner.png)
 
 # Laravel package to generate arrays of available timezones to be used in lists.
