@@ -43,9 +43,9 @@ $timezones = Timezones::excludeContinents(['Africa', 'America'])
 
 ### Show offset
 ```php
-$timezones = Timezones::toArray()->showOffset();
+$timezones = Timezones::showOffset()->toArray();
 // or
-$timezones = Timezones::toArray()->showOffset(showOffset: false);
+$timezones = Timezones::showOffset(showOffset: false)->toArray();
 ```
 
 ## Testing
