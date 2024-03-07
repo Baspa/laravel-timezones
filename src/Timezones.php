@@ -33,23 +33,20 @@ class Timezones
 
     public function toArray(bool $grouped = false, bool $htmlencode = true): array
     {
+        if ($grouped) {
+            return $this->toArrayGrouped($htmlencode);
+        }
+    
+        return $this->toArrayUngrouped($htmlencode);
+    }
+    
+    private function toArrayGrouped(bool $htmlencode = true): array
+    {
         $list = [];
-
+    
         foreach ($this->loadContinents() as $continent => $timezoneGroup) {
             $timezones = DateTimeZone::listIdentifiers(timezoneGroup: $timezoneGroup);
-
-            if (! $grouped) {
-                foreach ($timezones as $timezone) {
-                    $list[$timezone] = $this->formatTimezone(
-                        timezone: $timezone,
-                        cutOffContinent: $continent,
-                        htmlencode: $htmlencode
-                    );
-                }
-
-                continue;
-            }
-
+    
             foreach ($timezones as $timezone) {
                 $list[$continent][$timezone] = $this->formatTimezone(
                     timezone: $timezone,
@@ -58,7 +55,26 @@ class Timezones
                 );
             }
         }
-
+    
+        return $list;
+    }
+    
+    private function toArrayUngrouped(bool $htmlencode = true): array
+    {
+        $list = [];
+    
+        foreach ($this->loadContinents() as $continent => $timezoneGroup) {
+            $timezones = DateTimeZone::listIdentifiers(timezoneGroup: $timezoneGroup);
+    
+            foreach ($timezones as $timezone) {
+                $list[$timezone] = $this->formatTimezone(
+                    timezone: $timezone,
+                    cutOffContinent: $continent,
+                    htmlencode: $htmlencode
+                );
+            }
+        }
+    
         return $list;
     }
 
