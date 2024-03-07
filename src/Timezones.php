@@ -31,6 +31,16 @@ class Timezones
     /** @var string */
     protected $offsetPrefix = 'GMT/UTC';
 
+    /** @var bool */
+    protected $includeGeneralTimezones = false;
+
+    public function includeGeneral(bool $include = true): self
+    {
+        $this->includeGeneralTimezones = $include;
+
+        return $this;
+    }
+
     public function toArray(bool $grouped = false, bool $htmlencode = true): array
     {
         if ($grouped) {
@@ -56,6 +66,11 @@ class Timezones
             }
         }
 
+        if ($this->includeGeneralTimezones) {
+            $list['General']['UTC'] = 'UTC';
+            $list['General']['GMT'] = 'GMT';
+        }
+
         return $list;
     }
 
@@ -73,6 +88,11 @@ class Timezones
                     htmlencode: $htmlencode
                 );
             }
+        }
+
+        if ($this->includeGeneralTimezones) {
+            $list['UTC'] = 'UTC';
+            $list['GMT'] = 'GMT';
         }
 
         return $list;

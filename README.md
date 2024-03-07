@@ -48,6 +48,13 @@ $timezones = Timezones::showOffset()->toArray();
 $timezones = Timezones::showOffset(showOffset: false)->toArray();
 ```
 
+### Include general timezones 
+To include general timezones like GMT or UTC use the `includeGeneral` method.
+
+```php
+$timezones = Timezones::includeGeneral()->toArray();
+```
+
 ## Testing
 
 ```bash

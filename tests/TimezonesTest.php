@@ -33,3 +33,13 @@ it('can exclude continents', function () {
     $this->assertArrayNotHasKey('Africa', $excludedTimezones);
     $this->assertArrayNotHasKey('America', $excludedTimezones);
 });
+
+it('can include general timezones', function () {
+    $timezones = new \Baspa\Timezones\Timezones();
+
+    $includedTimezones = $timezones->includeGeneral()->toArray(grouped: false);
+
+    $this->assertIsArray($includedTimezones);
+    $this->assertArrayHasKey('UTC', $includedTimezones);
+    $this->assertArrayHasKey('GMT', $includedTimezones);
+});
