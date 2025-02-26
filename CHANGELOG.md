@@ -2,6 +2,10 @@
 
 All notable changes to `laravel-timezones` will be documented in this file.
 
+## v1.3.0 (Laravel 12 support) - 2025-02-26
+
+**Full Changelog**: https://github.com/Baspa/laravel-timezones/compare/v1.2.0...v1.3.0
+
 ## v1.2.0 (Laravel 11 support) - 2024-12-14
 
 **Full Changelog**: https://github.com/Baspa/laravel-timezones/compare/v1.1.1...v1.2.0
