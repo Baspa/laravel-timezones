@@ -5,6 +5,7 @@ namespace Baspa\Timezones;
 use Baspa\Timezones\Enums\HtmlEntity;
 use DateTime;
 use DateTimeZone;
+use League\ISO3166\ISO3166;
 
 class Timezones
 {
@@ -34,9 +35,19 @@ class Timezones
     /** @var bool */
     protected $includeGeneralTimezones = false;
 
+    /** @var bool */
+    protected $showCountry = false;
+
     public function includeGeneral(bool $include = true): self
     {
         $this->includeGeneralTimezones = $include;
+
+        return $this;
+    }
+
+    public function showCountry(bool $show = true): self
+    {
+        $this->showCountry = $show;
 
         return $this;
     }
@@ -128,6 +139,14 @@ class Timezones
 
         $normalizedTimezone = $this->normalizeTimezone(timezone: $displayedTimezone);
 
+        // Add country name if enabled
+        if ($this->showCountry) {
+            $countryName = $this->getCountryName($timezone);
+            if ($countryName) {
+                $normalizedTimezone = $normalizedTimezone.' ('.$countryName.')';
+            }
+        }
+
         if (! $this->showOffset) {
             return $normalizedTimezone;
         }
@@ -217,6 +236,14 @@ class Timezones
         // Keep the full timezone identifier (e.g., Europe/Amsterdam)
         $normalizedTimezone = $this->normalizeTimezone(timezone: $timezone);
 
+        // Add country name if enabled
+        if ($this->showCountry) {
+            $countryName = $this->getCountryName($timezone);
+            if ($countryName) {
+                $normalizedTimezone = $normalizedTimezone.' ('.$countryName.')';
+            }
+        }
+
         if (! $this->showOffset) {
             return $normalizedTimezone;
         }
@@ -241,5 +268,28 @@ class Timezones
         $separator = $this->formatSeparator(htmlencode: $htmlencode);
 
         return '('.$this->offsetPrefix.$normalizedOffset.')'.$separator.$normalizedTimezone;
+    }
+
+    /**
+     * Get the country name for a timezone using ISO 3166
+     */
+    protected function getCountryName(string $timezone): ?string
+    {
+        try {
+            $tz = new DateTimeZone($timezone);
+            $location = $tz->getLocation();
+            $countryCode = $location['country_code'] ?? null;
+
+            if (! $countryCode) {
+                return null;
+            }
+
+            $iso3166 = new ISO3166;
+            $country = $iso3166->alpha2($countryCode);
+
+            return $country['name'] ?? null;
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }
