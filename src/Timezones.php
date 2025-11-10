@@ -284,7 +284,7 @@ class Timezones
                 return null;
             }
 
-            $iso3166 = new ISO3166();
+            $iso3166 = new ISO3166;
             $country = $iso3166->alpha2($countryCode);
 
             return $country['name'] ?? null;
