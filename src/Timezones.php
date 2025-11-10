@@ -180,4 +180,66 @@ class Timezones
 
         return $time->format('P');
     }
+
+    /**
+     * Get timezones array with full continent/city names preserved
+     *
+     * @param  bool  $htmlencode  Whether to use HTML entities
+     */
+    public function toArrayWithContinents(bool $htmlencode = true): array
+    {
+        $list = [];
+
+        foreach ($this->loadContinents() as $continent => $timezoneGroup) {
+            $timezones = DateTimeZone::listIdentifiers(timezoneGroup: $timezoneGroup);
+
+            foreach ($timezones as $timezone) {
+                $list[$timezone] = $this->formatTimezoneWithContinent(
+                    timezone: $timezone,
+                    htmlencode: $htmlencode
+                );
+            }
+        }
+
+        if ($this->includeGeneralTimezones) {
+            $list['UTC'] = 'UTC';
+            $list['GMT'] = 'GMT';
+        }
+
+        return $list;
+    }
+
+    /**
+     * Format timezone string with continent name preserved
+     */
+    protected function formatTimezoneWithContinent(string $timezone, bool $htmlencode = true): string
+    {
+        // Keep the full timezone identifier (e.g., Europe/Amsterdam)
+        $normalizedTimezone = $this->normalizeTimezone(timezone: $timezone);
+
+        if (! $this->showOffset) {
+            return $normalizedTimezone;
+        }
+
+        $offset = $this->getOffset($timezone);
+
+        // Format offset with consistent width - pad the offset to ensure alignment
+        $search = ['-', '+'];
+        $replace = $htmlencode ? [HtmlEntity::MINUS->value, HtmlEntity::PLUS->value] : ['-', '+'];
+        $formattedSign = str_replace($search, $replace, substr($offset, 0, 1));
+        $timeOffset = substr($offset, 1); // Get the time part (e.g., "00:00" or "03:00")
+
+        // Pad the entire offset string to a consistent width (sign + space + HH:MM = 7 chars visible)
+        // Use str_pad to ensure the offset portion is always the same width
+        $offsetString = $formattedSign.HtmlEntity::WHITESPACE->value.$timeOffset;
+
+        // Build with consistent spacing - add extra padding after to ensure alignment
+        $normalizedOffset = $htmlencode
+            ? HtmlEntity::WHITESPACE->value.$offsetString
+            : ' '.$formattedSign.' '.$timeOffset;
+
+        $separator = $this->formatSeparator(htmlencode: $htmlencode);
+
+        return '('.$this->offsetPrefix.$normalizedOffset.')'.$separator.$normalizedTimezone;
+    }
 }
