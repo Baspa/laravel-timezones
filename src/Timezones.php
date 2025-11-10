@@ -184,8 +184,7 @@ class Timezones
     /**
      * Get timezones array with full continent/city names preserved
      *
-     * @param bool $htmlencode Whether to use HTML entities
-     * @return array
+     * @param  bool  $htmlencode  Whether to use HTML entities
      */
     public function toArrayWithContinents(bool $htmlencode = true): array
     {
@@ -212,10 +211,6 @@ class Timezones
 
     /**
      * Format timezone string with continent name preserved
-     *
-     * @param string $timezone
-     * @param bool $htmlencode
-     * @return string
      */
     protected function formatTimezoneWithContinent(string $timezone, bool $htmlencode = true): string
     {
@@ -236,12 +231,12 @@ class Timezones
 
         // Pad the entire offset string to a consistent width (sign + space + HH:MM = 7 chars visible)
         // Use str_pad to ensure the offset portion is always the same width
-        $offsetString = $formattedSign . HtmlEntity::WHITESPACE->value . $timeOffset;
+        $offsetString = $formattedSign.HtmlEntity::WHITESPACE->value.$timeOffset;
 
         // Build with consistent spacing - add extra padding after to ensure alignment
         $normalizedOffset = $htmlencode
-            ? HtmlEntity::WHITESPACE->value . $offsetString
-            : ' ' . $formattedSign . ' ' . $timeOffset;
+            ? HtmlEntity::WHITESPACE->value.$offsetString
+            : ' '.$formattedSign.' '.$timeOffset;
 
         $separator = $this->formatSeparator(htmlencode: $htmlencode);
 
