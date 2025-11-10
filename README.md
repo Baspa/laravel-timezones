@@ -48,11 +48,33 @@ $timezones = Timezones::showOffset()->toArray();
 $timezones = Timezones::showOffset(showOffset: false)->toArray();
 ```
 
-### Include general timezones 
+### Include general timezones
 To include general timezones like GMT or UTC use the `includeGeneral` method.
 
 ```php
 $timezones = Timezones::includeGeneral()->toArray();
+```
+
+### Show country names
+To include country names alongside timezone labels use the `showCountry` method. This uses PHP's built-in timezone data combined with the [league/iso3166](https://github.com/thephpleague/iso3166) package to provide accurate country names.
+
+```php
+// Basic usage with country names
+$timezones = Timezones::showCountry()->toArray();
+// Output: "Amsterdam (Netherlands)"
+
+// Combined with other methods
+$timezones = Timezones::showCountry()
+    ->showOffset(false)
+    ->toArray();
+// Output: "Amsterdam (Netherlands)"
+
+// With full continent names preserved
+$timezones = Timezones::showCountry()->toArrayWithContinents();
+// Output: "Europe / Amsterdam (Netherlands)"
+
+// Grouped by continent with country names
+$timezones = Timezones::showCountry()->toArray(grouped: true);
 ```
 
 ## Testing
