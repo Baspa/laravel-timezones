@@ -151,20 +151,27 @@ class Timezones
             return $normalizedTimezone;
         }
 
-        $notmalizedOffset = $this->formatOffset(
-            offset: $this->getOffset($timezone),
-            htmlencode: $htmlencode
-        );
+        $offset = $this->getOffset($timezone);
+
+        // Format offset consistently with formatTimezoneWithContinent
+        $search = ['-', '+'];
+        $replace = $htmlencode ? [HtmlEntity::MINUS->value, HtmlEntity::PLUS->value] : ['-', '+'];
+        $formattedSign = str_replace($search, $replace, substr($offset, 0, 1));
+        $timeOffset = substr($offset, 1);
+
+        $normalizedOffset = $htmlencode
+            ? $formattedSign.HtmlEntity::WHITESPACE->value.$timeOffset
+            : $formattedSign.' '.$timeOffset;
 
         $separator = $this->formatSeparator(htmlencode: $htmlencode);
 
-        return '('.$this->offsetPrefix.$notmalizedOffset.')'.$separator.$normalizedTimezone;
+        return '('.$this->offsetPrefix.HtmlEntity::WHITESPACE->value.$normalizedOffset.')'.$separator.$normalizedTimezone;
     }
 
     protected function formatOffset(string $offset, bool $htmlencode = true): string
     {
         $search = ['-', '+'];
-        $replace = $htmlencode ? [' '.HtmlEntity::MINUS->value.' ', ' '.HtmlEntity::PLUS->value.' '] : [' - ', ' + '];
+        $replace = $htmlencode ? [HtmlEntity::MINUS->value, HtmlEntity::PLUS->value] : ['-', '+'];
 
         return str_replace(
             search: $search,
@@ -187,10 +194,7 @@ class Timezones
 
     protected function formatSeparator(bool $htmlencode = true): string
     {
-        return $htmlencode ? str_repeat(
-            string: HtmlEntity::WHITESPACE->value,
-            times: 5
-        ) : ' ';
+        return $htmlencode ? HtmlEntity::WHITESPACE->value : ' ';
     }
 
     protected function getOffset(string $timezone): string
@@ -262,12 +266,12 @@ class Timezones
 
         // Build with consistent spacing - add extra padding after to ensure alignment
         $normalizedOffset = $htmlencode
-            ? HtmlEntity::WHITESPACE->value.$offsetString
+            ? $offsetString
             : ' '.$formattedSign.' '.$timeOffset;
 
         $separator = $this->formatSeparator(htmlencode: $htmlencode);
 
-        return '('.$this->offsetPrefix.$normalizedOffset.')'.$separator.$normalizedTimezone;
+        return '('.$this->offsetPrefix.HtmlEntity::WHITESPACE->value.$normalizedOffset.')'.$separator.$normalizedTimezone;
     }
 
     /**
