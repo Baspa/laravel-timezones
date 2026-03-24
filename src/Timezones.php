@@ -291,7 +291,7 @@ class Timezones
             $iso3166 = new ISO3166;
             $country = $iso3166->alpha2($countryCode);
 
-            return $country['name'] ?? null;
+            return $country['name'];
         } catch (\Exception $e) {
             return null;
         }
