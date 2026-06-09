@@ -13,6 +13,9 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: true
       matrix:
@@ -23,13 +26,13 @@ jobs:
         include:
           - laravel: 11.*
             testbench: ^9.9
-            carbon: ^2.72.2
+            carbon: ^2.72.6
           - laravel: 12.*
             testbench: 10.*
-            carbon: ^3.0
+            carbon: ^3.8.4
           - laravel: 13.*
             testbench: 11.*
-            carbon: ^3.0
+            carbon: ^3.8.4
         exclude:
           - laravel: 13.*
             php: 8.2
