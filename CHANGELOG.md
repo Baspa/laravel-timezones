@@ -2,6 +2,18 @@
 
 All notable changes to `laravel-timezones` will be documented in this file.
 
+## v1.5.0 - 2026-06-09
+
+### What's Changed
+
+* Update laravel/boost requirement from ^1.8 to ^2.4 by @dependabot[bot] in https://github.com/Baspa/laravel-timezones/pull/22
+* Bump dependabot/fetch-metadata from 2.5.0 to 3.0.0 by @dependabot[bot] in https://github.com/Baspa/laravel-timezones/pull/21
+* Bump dependabot/fetch-metadata from 3.0.0 to 3.1.0 by @dependabot[bot] in https://github.com/Baspa/laravel-timezones/pull/23
+* Bump actions/checkout from 4 to 6 by @dependabot[bot] in https://github.com/Baspa/laravel-timezones/pull/17
+* Fix CI: support Laravel 12/13, drop EOL Laravel 10, add Codecov by @Baspa in https://github.com/Baspa/laravel-timezones/pull/24
+
+**Full Changelog**: https://github.com/Baspa/laravel-timezones/compare/v1.4.0...v1.5.0
+
 ## v1.4.0 - 2026-03-24
 
 ### What's Changed
