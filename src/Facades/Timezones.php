@@ -8,9 +8,12 @@ use Illuminate\Support\Facades\Facade;
  * @method static array toArray(bool $grouped = false, bool $htmlencode = true)
  * @method static array toArrayWithContinents(bool $htmlencode = true)
  * @method static \Baspa\Timezones\Timezones excludeContinents(array<int, string> $continents)
+ * @method static \Baspa\Timezones\Timezones onlyContinents(array<int, string> $continents)
  * @method static \Baspa\Timezones\Timezones includeGeneral(bool $include = true)
  * @method static \Baspa\Timezones\Timezones showOffset(bool $showOffset = true)
- * @method static \Baspa\Timezones\Timezones showCountry(bool $show = true)
+ * @method static \Baspa\Timezones\Timezones offsetPrefix(string $prefix)
+ * @method static \Baspa\Timezones\Timezones showCountry(bool $show = true, ?string $locale = null)
+ * @method static \Baspa\Timezones\Timezones sortByOffset(bool $sort = true)
  *
  * @see \Baspa\Timezones\Timezones
  */
