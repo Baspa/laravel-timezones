@@ -4,6 +4,7 @@ namespace Baspa\Timezones;
 
 use Baspa\Timezones\Enums\HtmlEntity;
 use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 use League\ISO3166\ISO3166;
 
@@ -38,6 +39,9 @@ class Timezones
     /** @var bool */
     protected $showCountry = false;
 
+    /** @var bool */
+    protected $sortByOffset = false;
+
     public function includeGeneral(bool $include = true): self
     {
         $this->includeGeneralTimezones = $include;
@@ -50,6 +54,35 @@ class Timezones
         $this->showCountry = $show;
 
         return $this;
+    }
+
+    public function sortByOffset(bool $sort = true): self
+    {
+        $this->sortByOffset = $sort;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, string>  $list
+     * @return array<string, string>
+     */
+    private function applyOffsetSort(array $list): array
+    {
+        if (! $this->sortByOffset) {
+            return $list;
+        }
+
+        $now = new DateTimeImmutable;
+        $offsets = [];
+
+        foreach (array_keys($list) as $timezone) {
+            $offsets[$timezone] = (new DateTimeZone($timezone))->getOffset($now);
+        }
+
+        uksort($list, fn (string $a, string $b): int => $offsets[$a] <=> $offsets[$b] ?: strcmp($a, $b));
+
+        return $list;
     }
 
     public function toArray(bool $grouped = false, bool $htmlencode = true): array
@@ -82,7 +115,7 @@ class Timezones
             $list['General']['GMT'] = 'GMT';
         }
 
-        return $list;
+        return array_map($this->applyOffsetSort(...), $list);
     }
 
     private function toArrayUngrouped(bool $htmlencode = true): array
@@ -106,7 +139,7 @@ class Timezones
             $list['GMT'] = 'GMT';
         }
 
-        return $list;
+        return $this->applyOffsetSort($list);
     }
 
     public function excludeContinents(array $continents): self
@@ -229,7 +262,7 @@ class Timezones
             $list['GMT'] = 'GMT';
         }
 
-        return $list;
+        return $this->applyOffsetSort($list);
     }
 
     /**

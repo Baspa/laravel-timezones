@@ -49,6 +49,16 @@ $timezones = Timezones::showOffset()->toArray();
 $timezones = Timezones::showOffset(showOffset: false)->toArray();
 ```
 
+### Sort by offset
+By default timezones are sorted alphabetically. Use the `sortByOffset` method to sort them by their current UTC offset (UTC-11 first, UTC+14 last) instead. Timezones with the same offset are sorted by identifier.
+
+```php
+$timezones = Timezones::sortByOffset()->toArray();
+// Keys: Pacific/Midway, Pacific/Niue, Pacific/Pago_Pago, America/Adak, ..., Pacific/Kiritimati
+```
+
+This also works for `toArrayWithContinents()` and for `toArray(grouped: true)`, where each continent is sorted on its own and the order of the continents stays the same. General timezones (UTC and GMT) are sorted as UTC+00:00.
+
 ### Include general timezones
 To include general timezones like GMT or UTC use the `includeGeneral` method.
 
