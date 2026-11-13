@@ -11,11 +11,6 @@ function exposedTimezones(): Timezones
             return $this->formatTimezone($timezone, $cutOffContinent, $htmlencode);
         }
 
-        public function exposedFormatOffset(string $offset, bool $htmlencode = true): string
-        {
-            return $this->formatOffset($offset, $htmlencode);
-        }
-
         public function exposedGetCountryName(string $timezone): ?string
         {
             return $this->getCountryName($timezone);
@@ -75,8 +70,36 @@ it('formats timezones without html entities', function () {
     $list = (new Timezones)->toArray(grouped: false, htmlencode: false);
 
     expect($list['Europe/Amsterdam'])
-        ->toMatch('/^\(GMT\/UTC&#160;[+-] \d{2}:\d{2}\) Amsterdam$/');
+        ->toMatch('/^\(GMT\/UTC [+-] \d{2}:\d{2}\) Amsterdam$/');
 });
+
+it('keeps the html encoded format for every output method', function () {
+    $timezones = new Timezones;
+
+    expect($timezones->toArray()['Asia/Tokyo'])->toBe('(GMT/UTC&#160;&#43;&#160;09:00)&#160;Tokyo')
+        ->and($timezones->toArray()['America/Phoenix'])->toBe('(GMT/UTC&#160;&#8722;&#160;07:00)&#160;Phoenix')
+        ->and($timezones->toArray(grouped: true)['Asia']['Asia/Tokyo'])->toBe('(GMT/UTC&#160;&#43;&#160;09:00)&#160;Tokyo')
+        ->and($timezones->toArrayWithContinents()['Asia/Tokyo'])->toBe('(GMT/UTC&#160;&#43;&#160;09:00)&#160;Asia / Tokyo')
+        ->and($timezones->toArrayWithContinents()['America/Phoenix'])->toBe('(GMT/UTC&#160;&#8722;&#160;07:00)&#160;America / Phoenix');
+});
+
+it('formats plain text labels for every output method', function () {
+    $timezones = new Timezones;
+
+    expect($timezones->toArray(htmlencode: false)['Asia/Tokyo'])->toBe('(GMT/UTC + 09:00) Tokyo')
+        ->and($timezones->toArray(htmlencode: false)['America/Phoenix'])->toBe('(GMT/UTC - 07:00) Phoenix')
+        ->and($timezones->toArray(grouped: true, htmlencode: false)['Asia']['Asia/Tokyo'])->toBe('(GMT/UTC + 09:00) Tokyo')
+        ->and($timezones->toArrayWithContinents(htmlencode: false)['Asia/Tokyo'])->toBe('(GMT/UTC + 09:00) Asia / Tokyo')
+        ->and($timezones->toArrayWithContinents(htmlencode: false)['America/Phoenix'])->toBe('(GMT/UTC - 07:00) America / Phoenix');
+});
+
+it('returns no html entities in plain text mode', function (array $labels) {
+    expect(implode(PHP_EOL, $labels))->not->toContain('&#');
+})->with([
+    'flat' => fn () => (new Timezones)->showCountry()->toArray(htmlencode: false),
+    'grouped' => fn () => array_merge(...array_values((new Timezones)->showCountry()->toArray(grouped: true, htmlencode: false))),
+    'with continents' => fn () => (new Timezones)->showCountry()->toArrayWithContinents(htmlencode: false),
+]);
 
 it('normalizes underscores and St_ prefixes in timezone names', function () {
     $list = (new Timezones)->showOffset(false)->toArray();
@@ -174,7 +197,7 @@ it('can get timezones with continents without html entities', function () {
     $list = (new Timezones)->toArrayWithContinents(htmlencode: false);
 
     expect($list['Europe/Amsterdam'])
-        ->toMatch('/^\(GMT\/UTC&#160; [+-] \d{2}:\d{2}\) Europe \/ Amsterdam$/');
+        ->toMatch('/^\(GMT\/UTC [+-] \d{2}:\d{2}\) Europe \/ Amsterdam$/');
 });
 
 it('can get timezones with continents without the offset', function () {
@@ -211,21 +234,7 @@ it('formats a timezone without a cut off continent', function () {
         htmlencode: false
     );
 
-    expect($formatted)->toMatch('/^\(GMT\/UTC&#160;[+-] \d{2}:\d{2}\) Europe \/ Amsterdam$/');
-});
-
-it('formats an offset with html entities', function () {
-    $timezones = exposedTimezones();
-
-    expect($timezones->exposedFormatOffset('+02:00'))->toBe('&#43;02:00')
-        ->and($timezones->exposedFormatOffset('-05:00'))->toBe('&#8722;05:00');
-});
-
-it('formats an offset without html entities', function () {
-    $timezones = exposedTimezones();
-
-    expect($timezones->exposedFormatOffset('+02:00', htmlencode: false))->toBe('+02:00')
-        ->and($timezones->exposedFormatOffset('-05:00', htmlencode: false))->toBe('-05:00');
+    expect($formatted)->toMatch('/^\(GMT\/UTC [+-] \d{2}:\d{2}\) Europe \/ Amsterdam$/');
 });
 
 it('gets the offset for a timezone', function () {
