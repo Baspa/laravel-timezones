@@ -94,7 +94,9 @@ it('formats plain text labels for every output method', function () {
 });
 
 it('returns no html entities in plain text mode', function (array $labels) {
-    expect(implode(PHP_EOL, $labels))->not->toContain('&#');
+    $decoded = array_map(fn (string $label) => html_entity_decode($label, ENT_QUOTES | ENT_HTML5), $labels);
+
+    expect($decoded)->toBe($labels);
 })->with([
     'flat' => fn () => (new Timezones)->showCountry()->toArray(htmlencode: false),
     'grouped' => fn () => array_merge(...array_values((new Timezones)->showCountry()->toArray(grouped: true, htmlencode: false))),
