@@ -187,7 +187,7 @@ it('can get timezones with continents and country names', function () {
     $list = (new Timezones)->showCountry()->showOffset(false)->toArrayWithContinents();
 
     expect($list['Europe/Amsterdam'])->toBe('Europe / Amsterdam (Netherlands)')
-        ->and($list['America/New_York'])->toBe('America / New York (United States of America)');
+        ->and($list['America/New_York'])->toBe('America / New York (United States)');
 });
 
 it('can get timezones with continents including general timezones', function () {

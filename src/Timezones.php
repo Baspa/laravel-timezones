@@ -5,7 +5,9 @@ namespace Baspa\Timezones;
 use Baspa\Timezones\Enums\HtmlEntity;
 use DateTime;
 use DateTimeZone;
+use Exception;
 use League\ISO3166\ISO3166;
+use Locale;
 
 class Timezones
 {
@@ -38,6 +40,12 @@ class Timezones
     /** @var bool */
     protected $showCountry = false;
 
+    /** @var string|null */
+    protected $countryLocale = null;
+
+    /** @var array<string, array<string, string>> */
+    protected $countryNamesByLocale = [];
+
     public function includeGeneral(bool $include = true): self
     {
         $this->includeGeneralTimezones = $include;
@@ -45,9 +53,10 @@ class Timezones
         return $this;
     }
 
-    public function showCountry(bool $show = true): self
+    public function showCountry(bool $show = true, ?string $locale = null): self
     {
         $this->showCountry = $show;
+        $this->countryLocale = $locale;
 
         return $this;
     }
@@ -143,7 +152,7 @@ class Timezones
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$countryName.')';
+                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
             }
         }
 
@@ -244,7 +253,7 @@ class Timezones
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$countryName.')';
+                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
             }
         }
 
@@ -274,26 +283,69 @@ class Timezones
         return '('.$this->offsetPrefix.HtmlEntity::WHITESPACE->value.$normalizedOffset.')'.$separator.$normalizedTimezone;
     }
 
-    /**
-     * Get the country name for a timezone using ISO 3166
-     */
     protected function getCountryName(string $timezone): ?string
     {
         try {
-            $tz = new DateTimeZone($timezone);
-            $location = $tz->getLocation();
-            $countryCode = $location['country_code'] ?? null;
-
-            if (! $countryCode) {
-                return null;
-            }
-
-            $iso3166 = new ISO3166;
-            $country = $iso3166->alpha2($countryCode);
-
-            return $country['name'];
-        } catch (\Exception $e) {
+            $location = (new DateTimeZone($timezone))->getLocation();
+        } catch (Exception) {
             return null;
         }
+
+        if ($location === false) {
+            return null;
+        }
+
+        return $this->countryNames(locale: $this->resolveCountryLocale())[$location['country_code']] ?? null;
+    }
+
+    protected function formatCountryName(string $countryName, bool $htmlencode = true): string
+    {
+        return $htmlencode ? htmlspecialchars($countryName, ENT_QUOTES) : $countryName;
+    }
+
+    protected function resolveCountryLocale(): string
+    {
+        if ($this->countryLocale !== null) {
+            return $this->countryLocale;
+        }
+
+        if (function_exists('app') && app()->bound('config')) {
+            return app()->getLocale();
+        }
+
+        return 'en';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function countryNames(string $locale): array
+    {
+        if (isset($this->countryNamesByLocale[$locale])) {
+            return $this->countryNamesByLocale[$locale];
+        }
+
+        $names = array_column((new ISO3166)->all(), 'name', 'alpha2');
+
+        if ($this->intlIsAvailable()) {
+            foreach ($names as $countryCode => $name) {
+                $names[$countryCode] = $this->localizedCountryName($countryCode, $locale) ?? $name;
+            }
+        }
+
+        return $this->countryNamesByLocale[$locale] = $names;
+    }
+
+    protected function intlIsAvailable(): bool
+    {
+        return class_exists(Locale::class);
+    }
+
+    protected function localizedCountryName(string $countryCode, string $locale): ?string
+    {
+        $name = Locale::getDisplayRegion('-'.$countryCode, $locale);
+
+        // ICU returns the code itself for a region it has no name for.
+        return $name === false || $name === '' || $name === $countryCode ? null : $name;
     }
 }

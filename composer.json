@@ -34,6 +34,9 @@
         "phpstan/phpstan-deprecation-rules": "^1.0 || ^2.0",
         "phpstan/phpstan-phpunit": "^1.0 || ^2.0"
     },
+    "suggest": {
+        "ext-intl": "Needed for short, localized country names"
+    },
     "autoload": {
         "psr-4": {
             "Baspa\\Timezones\\": "src/",

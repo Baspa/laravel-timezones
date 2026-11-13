@@ -57,26 +57,26 @@ $timezones = Timezones::includeGeneral()->toArray();
 ```
 
 ### Show country names
-To include country names alongside timezone labels use the `showCountry` method. This uses PHP's built-in timezone data combined with the [league/iso3166](https://github.com/thephpleague/iso3166) package to provide accurate country names.
+To include country names alongside timezone labels use the `showCountry` method. With the [intl extension](https://www.php.net/manual/en/book.intl.php) installed, country names are short and in your app's locale (`app()->getLocale()`). Without intl, the package falls back to the official English names from [league/iso3166](https://github.com/thephpleague/iso3166), such as "United Kingdom of Great Britain and Northern Ireland".
 
 ```php
 // Basic usage with country names
-$timezones = Timezones::showCountry()->toArray();
-// Output: "Amsterdam (Netherlands)"
+$timezones = Timezones::showCountry()->showOffset(false)->toArray();
+// Output: "London (United Kingdom)"
 
-// Combined with other methods
-$timezones = Timezones::showCountry()
-    ->showOffset(false)
-    ->toArray();
-// Output: "Amsterdam (Netherlands)"
+// In a specific locale instead of the app locale
+$timezones = Timezones::showCountry(locale: 'nl')->showOffset(false)->toArray();
+// Output: "London (Verenigd Koninkrijk)"
 
 // With full continent names preserved
-$timezones = Timezones::showCountry()->toArrayWithContinents();
-// Output: "Europe / Amsterdam (Netherlands)"
+$timezones = Timezones::showCountry()->showOffset(false)->toArrayWithContinents();
+// Output: "Europe / London (United Kingdom)"
 
 // Grouped by continent with country names
 $timezones = Timezones::showCountry()->toArray(grouped: true);
 ```
+
+Country names are HTML-escaped in the default HTML output (`Bosnia &amp; Herzegovina`) and left as-is with `htmlencode: false`.
 
 ## Testing
 
