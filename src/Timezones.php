@@ -126,6 +126,13 @@ class Timezones
         return $this;
     }
 
+    public function offsetPrefix(string $prefix): self
+    {
+        $this->offsetPrefix = $prefix;
+
+        return $this;
+    }
+
     /** @return array<string, int> */
     protected function loadContinents(): array
     {
@@ -161,7 +168,7 @@ class Timezones
 
         $space = $this->formatSeparator(htmlencode: $htmlencode);
 
-        return '('.$this->offsetPrefix.$space.$sign.$space.$time.')'.$space.$normalizedTimezone;
+        return '('.$this->formatOffsetPrefix(htmlencode: $htmlencode).$sign.$space.$time.')'.$space.$normalizedTimezone;
     }
 
     protected function normalizeTimezone(string $timezone): string
@@ -179,6 +186,17 @@ class Timezones
     protected function formatSeparator(bool $htmlencode = true): string
     {
         return $htmlencode ? HtmlEntity::WHITESPACE->value : ' ';
+    }
+
+    protected function formatOffsetPrefix(bool $htmlencode = true): string
+    {
+        if ($this->offsetPrefix === '') {
+            return '';
+        }
+
+        $prefix = $htmlencode ? htmlspecialchars($this->offsetPrefix, ENT_QUOTES) : $this->offsetPrefix;
+
+        return $prefix.$this->formatSeparator(htmlencode: $htmlencode);
     }
 
     protected function getOffset(string $timezone): string

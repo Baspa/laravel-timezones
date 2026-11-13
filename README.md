@@ -60,6 +60,17 @@ $timezones = Timezones::showOffset()->toArray();
 $timezones = Timezones::showOffset(showOffset: false)->toArray();
 ```
 
+### Offset prefix
+The offset starts with `GMT/UTC` by default. Use the `offsetPrefix` method to change it, or pass an empty string to leave it out. In HTML mode the prefix is escaped with `htmlspecialchars`.
+
+```php
+Timezones::offsetPrefix('UTC')->toArray(htmlencode: false)['Asia/Tokyo'];
+// "(UTC + 09:00) Tokyo"
+
+Timezones::offsetPrefix('')->toArray(htmlencode: false)['Asia/Tokyo'];
+// "(+ 09:00) Tokyo"
+```
+
 ### Include general timezones
 To include general timezones like GMT or UTC use the `includeGeneral` method.
 
