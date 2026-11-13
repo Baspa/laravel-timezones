@@ -52,7 +52,9 @@ $timezones = Timezones::onlyContinents(['Europe', 'Asia'])
     ->toArray();
 ```
 
-Continent names are case-insensitive (`'europe'` and `'EUROPE'` both match `Europe`). The output keeps the original continent order, whatever order you pass the names in. An unknown name throws an `InvalidArgumentException` that lists the valid ones: `Africa`, `America`, `Antarctica`, `Arctic`, `Asia`, `Atlantic`, `Australia`, `Europe`, `Indian` and `Pacific`.
+A second `onlyContinents` call replaces the first, while `excludeContinents` calls add up. The order of the calls doesn't matter.
+
+Continent names are case-insensitive (`'europe'` and `'EUROPE'` both match `Europe`). The output keeps the original continent order, whatever order you pass the names in. An unknown name, a value that isn't a string, or an empty `onlyContinents([])` throws an `InvalidArgumentException`. The valid names are `Africa`, `America`, `Antarctica`, `Arctic`, `Asia`, `Atlantic`, `Australia`, `Europe`, `Indian` and `Pacific`.
 
 ### Show offset
 ```php

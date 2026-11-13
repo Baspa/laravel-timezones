@@ -57,13 +57,24 @@ it('throws for an unknown continent', function (string $method) {
         );
 })->with(['onlyContinents', 'excludeContinents']);
 
-it('composes chained continent filters', function () {
-    $list = (new Timezones)
-        ->onlyContinents(['Europe', 'Asia'])
-        ->excludeContinents(['asia'])
-        ->toArray(grouped: true);
+it('applies chained continent filters regardless of their order', function (Timezones $timezones) {
+    expect(array_keys($timezones->toArray(grouped: true)))->toBe(['Europe']);
+})->with([
+    'only, then exclude' => fn () => (new Timezones)->onlyContinents(['Europe', 'Asia'])->excludeContinents(['asia']),
+    'exclude, then only' => fn () => (new Timezones)->excludeContinents(['asia'])->onlyContinents(['Europe', 'Asia']),
+]);
+
+it('replaces the kept continents on a repeated onlyContinents call', function () {
+    $list = (new Timezones)->onlyContinents(['Asia'])->onlyContinents(['Europe'])->toArray(grouped: true);
 
     expect(array_keys($list))->toBe(['Europe']);
+});
+
+it('adds up repeated excludeContinents calls', function () {
+    $list = (new Timezones)->excludeContinents(['Asia'])->excludeContinents(['Europe'])->toArray(grouped: true);
+
+    expect($list)->not->toHaveKeys(['Asia', 'Europe'])
+        ->and($list)->toHaveCount(8);
 });
 
 it('accepts known continents that an earlier filter already removed', function () {
@@ -72,4 +83,32 @@ it('accepts known continents that an earlier filter already removed', function (
 
     expect($excludedTwice)->not->toHaveKey('Europe')
         ->and(array_keys($excludedAfterOnly))->toBe(['Europe']);
+});
+
+it('throws for a continent name that is not a string', function (string $method, mixed $name) {
+    expect(fn () => (new Timezones)->{$method}([$name]))
+        ->toThrow(InvalidArgumentException::class, 'Continent names must be strings like "Europe"');
+})->with(['onlyContinents', 'excludeContinents'])->with([
+    'null' => [null],
+    'DateTimeZone constant' => [DateTimeZone::EUROPE],
+    'nested array' => [['Europe']],
+]);
+
+it('throws when onlyContinents gets no continents', function () {
+    expect(fn () => (new Timezones)->onlyContinents([]))
+        ->toThrow(InvalidArgumentException::class, 'at least one continent');
+});
+
+it('validates continent names against the continents of a subclass', function () {
+    $timezones = new class extends Timezones
+    {
+        protected $continents = [
+            'Asia' => DateTimeZone::ASIA,
+            'Europe' => DateTimeZone::EUROPE,
+        ];
+    };
+
+    expect(array_keys($timezones->onlyContinents(['europe'])->toArray(grouped: true)))->toBe(['Europe'])
+        ->and(fn () => $timezones->excludeContinents(['Africa']))
+        ->toThrow(InvalidArgumentException::class, 'Valid continents are: Asia, Europe.');
 });

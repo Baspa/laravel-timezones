@@ -23,6 +23,12 @@ class Timezones
         'Pacific' => DateTimeZone::PACIFIC,
     ];
 
+    /** @var list<string>|null */
+    protected ?array $onlyContinents = null;
+
+    /** @var list<string> */
+    protected array $excludedContinents = [];
+
     /** @var array<string, string> */
     protected $timezones = [];
 
@@ -111,45 +117,50 @@ class Timezones
 
     public function excludeContinents(array $continents): self
     {
-        $this->continents = array_diff_key(
-            $this->continents,
-            array_flip(array: $this->resolveContinentNames($continents))
-        );
+        $this->excludedContinents = [
+            ...$this->excludedContinents,
+            ...$this->resolveContinentNames($continents),
+        ];
 
         return $this;
     }
 
     public function onlyContinents(array $continents): self
     {
-        $this->continents = array_intersect_key(
-            $this->continents,
-            array_flip(array: $this->resolveContinentNames($continents))
-        );
+        if ($continents === []) {
+            throw new \InvalidArgumentException('Pass at least one continent to onlyContinents().');
+        }
+
+        $this->onlyContinents = $this->resolveContinentNames($continents);
 
         return $this;
     }
 
     /**
-     * @param  array<string>  $names
-     * @return array<string>
+     * @return list<string>
      */
     private function resolveContinentNames(array $names): array
     {
-        // $this->continents may already be narrowed by an earlier filter, so validate against the default list.
-        /** @var array<string, int> $allContinents */
-        $allContinents = get_class_vars(static::class)['continents'];
-        $validNames = array_keys($allContinents);
+        $validNames = array_keys($this->continents);
         $validNamesByLowercase = array_combine(array_map(strtolower(...), $validNames), $validNames);
+        $resolvedNames = [];
 
-        return array_map(
-            fn (string $name): string => $validNamesByLowercase[strtolower($name)]
-                ?? throw new \InvalidArgumentException(sprintf(
-                    'Unknown continent "%s". Valid continents are: %s.',
-                    $name,
-                    implode(', ', $validNames)
-                )),
-            $names
-        );
+        foreach ($names as $name) {
+            if (! is_string($name)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Continent names must be strings like "Europe", %s given.',
+                    get_debug_type($name)
+                ));
+            }
+
+            $resolvedNames[] = $validNamesByLowercase[strtolower($name)] ?? throw new \InvalidArgumentException(sprintf(
+                'Unknown continent "%s". Valid continents are: %s.',
+                $name,
+                implode(', ', $validNames)
+            ));
+        }
+
+        return $resolvedNames;
     }
 
     public function showOffset(bool $showOffset = true): self
@@ -161,7 +172,11 @@ class Timezones
 
     protected function loadContinents(): array
     {
-        return $this->continents;
+        $continents = $this->onlyContinents === null
+            ? $this->continents
+            : array_intersect_key($this->continents, array_flip($this->onlyContinents));
+
+        return array_diff_key($continents, array_flip($this->excludedContinents));
     }
 
     protected function formatTimezone(string $timezone, ?string $cutOffContinent = null, bool $htmlencode = true): string
