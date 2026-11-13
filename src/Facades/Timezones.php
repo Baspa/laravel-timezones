@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @method static array toArray(bool $grouped = false, bool $htmlencode = true)
  * @method static array toArrayWithContinents(bool $htmlencode = true)
- * @method static \Baspa\Timezones\Timezones excludeContinents(array $continents)
+ * @method static \Baspa\Timezones\Timezones excludeContinents(array<int, string> $continents)
  * @method static \Baspa\Timezones\Timezones includeGeneral(bool $include = true)
  * @method static \Baspa\Timezones\Timezones showOffset(bool $showOffset = true)
  * @method static \Baspa\Timezones\Timezones showCountry(bool $show = true)
