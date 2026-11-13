@@ -113,10 +113,43 @@ class Timezones
     {
         $this->continents = array_diff_key(
             $this->continents,
-            array_flip(array: $continents)
+            array_flip(array: $this->resolveContinentNames($continents))
         );
 
         return $this;
+    }
+
+    public function onlyContinents(array $continents): self
+    {
+        $this->continents = array_intersect_key(
+            $this->continents,
+            array_flip(array: $this->resolveContinentNames($continents))
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string>  $names
+     * @return array<string>
+     */
+    private function resolveContinentNames(array $names): array
+    {
+        // $this->continents may already be narrowed by an earlier filter, so validate against the default list.
+        /** @var array<string, int> $allContinents */
+        $allContinents = get_class_vars(static::class)['continents'];
+        $validNames = array_keys($allContinents);
+        $validNamesByLowercase = array_combine(array_map(strtolower(...), $validNames), $validNames);
+
+        return array_map(
+            fn (string $name): string => $validNamesByLowercase[strtolower($name)]
+                ?? throw new \InvalidArgumentException(sprintf(
+                    'Unknown continent "%s". Valid continents are: %s.',
+                    $name,
+                    implode(', ', $validNames)
+                )),
+            $names
+        );
     }
 
     public function showOffset(bool $showOffset = true): self
