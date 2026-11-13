@@ -78,6 +78,23 @@ $timezones = Timezones::showCountry()->toArrayWithContinents();
 $timezones = Timezones::showCountry()->toArray(grouped: true);
 ```
 
+### Validation
+The array keys are timezone identifiers (e.g. `Europe/Amsterdam`), so you can validate a submitted value with Laravel's `timezone` rule:
+
+```php
+$request->validate([
+    'timezone' => ['required', 'timezone'],
+]);
+```
+
+`includeGeneral()` adds `GMT`, which the default `timezone` rule rejects. When you include general timezones, use `timezone:all_with_bc` instead (it also accepts other backward-compatible identifiers, such as `US/Eastern`):
+
+```php
+$request->validate([
+    'timezone' => ['required', 'timezone:all_with_bc'],
+]);
+```
+
 ## Testing
 
 ```bash
@@ -90,7 +107,7 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Issues and pull requests are welcome on [GitHub](https://github.com/Baspa/laravel-timezones).
 
 ## Credits
 
