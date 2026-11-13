@@ -34,6 +34,17 @@ use Baspa\Timezones\Facades\Timezones;
 $timezones = Timezones::toArray();
 ```
 
+### HTML entities or plain text
+By default the labels contain HTML entities (non-breaking spaces and plus/minus signs), for output that is not escaped, such as `{!! !!}` in Blade. Pass `htmlencode: false` to get plain text for selects that escape their option labels, such as Filament or Livewire. This works for `toArray()` (flat and grouped) and `toArrayWithContinents()`.
+
+```php
+Timezones::toArray()['Asia/Tokyo'];
+// "(GMT/UTC&#160;&#43;&#160;09:00)&#160;Tokyo"
+
+Timezones::toArray(htmlencode: false)['Asia/Tokyo'];
+// "(GMT/UTC + 09:00) Tokyo"
+```
+
 ### Exclude continents
 ```php
 use Baspa\Timezones\Facades\Timezones;
