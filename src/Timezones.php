@@ -13,6 +13,8 @@ use ResourceBundle;
 
 class Timezones
 {
+    public const DEFAULT_OFFSET_PREFIX = 'GMT/UTC';
+
     /** @var array<string, int> */
     protected $continents = [
         'Africa' => DateTimeZone::AFRICA,
@@ -40,7 +42,7 @@ class Timezones
     protected $showOffset = true;
 
     /** @var string */
-    protected $offsetPrefix = 'GMT/UTC';
+    protected $offsetPrefix = self::DEFAULT_OFFSET_PREFIX;
 
     /** @var bool */
     protected $includeGeneralTimezones = false;
@@ -228,6 +230,13 @@ class Timezones
         return $this;
     }
 
+    public function offsetPrefix(string $prefix = self::DEFAULT_OFFSET_PREFIX): self
+    {
+        $this->offsetPrefix = trim($prefix);
+
+        return $this;
+    }
+
     /** @return array<string, int> */
     protected function loadContinents(): array
     {
@@ -249,7 +258,7 @@ class Timezones
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
+                $normalizedTimezone = $normalizedTimezone.' ('.$this->escape(value: $countryName, htmlencode: $htmlencode).')';
             }
         }
 
@@ -267,7 +276,7 @@ class Timezones
 
         $space = $this->formatSeparator(htmlencode: $htmlencode);
 
-        return '('.$this->offsetPrefix.$space.$sign.$space.$time.')'.$space.$normalizedTimezone;
+        return '('.$this->formatOffsetPrefix(htmlencode: $htmlencode).$sign.$space.$time.')'.$space.$normalizedTimezone;
     }
 
     protected function normalizeTimezone(string $timezone): string
@@ -285,6 +294,15 @@ class Timezones
     protected function formatSeparator(bool $htmlencode = true): string
     {
         return $htmlencode ? HtmlEntity::WHITESPACE->value : ' ';
+    }
+
+    protected function formatOffsetPrefix(bool $htmlencode = true): string
+    {
+        if ($this->offsetPrefix === '') {
+            return '';
+        }
+
+        return $this->escape(value: $this->offsetPrefix, htmlencode: $htmlencode).$this->formatSeparator(htmlencode: $htmlencode);
     }
 
     protected function getOffset(string $timezone): string
@@ -325,9 +343,9 @@ class Timezones
             ??= $this->localizedCountryName($countryCode, $locale) ?? $this->isoCountryName($countryCode);
     }
 
-    protected function formatCountryName(string $countryName, bool $htmlencode = true): string
+    protected function escape(string $value, bool $htmlencode = true): string
     {
-        return $htmlencode ? htmlspecialchars($countryName, ENT_QUOTES) : $countryName;
+        return $htmlencode ? htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE) : $value;
     }
 
     protected function resolveCountryLocale(): string
