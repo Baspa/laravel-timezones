@@ -178,3 +178,15 @@ it('falls back to the official english names without intl', function () {
     expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)')
         ->and($list['Europe/London'])->toBe('London (United Kingdom of Great Britain and Northern Ireland)');
 });
+
+it('has no country name for a timezone without a location', function () {
+    $timezones = new class extends Timezones
+    {
+        public function exposedGetCountryName(string $timezone): ?string
+        {
+            return $this->getCountryName($timezone);
+        }
+    };
+
+    expect($timezones->exposedGetCountryName('+01:00'))->toBeNull();
+});
