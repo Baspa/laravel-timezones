@@ -79,7 +79,7 @@ $timezones = Timezones::showCountry()->toArray(grouped: true);
 ```
 
 ### Validation
-The array keys are timezone identifiers (e.g. `Europe/Amsterdam`), so you can validate a submitted value with Laravel's `timezone` rule:
+The keys of `toArray()` and `toArrayWithContinents()`, and the keys inside each group of `toArray(grouped: true)`, are timezone identifiers (e.g. `Europe/Amsterdam`). You can validate a submitted value with Laravel's `timezone` rule:
 
 ```php
 $request->validate([
