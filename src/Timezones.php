@@ -8,6 +8,7 @@ use DateTimeZone;
 use Exception;
 use League\ISO3166\ISO3166;
 use Locale;
+use ResourceBundle;
 
 class Timezones
 {
@@ -43,8 +44,18 @@ class Timezones
     /** @var string|null */
     protected $countryLocale = null;
 
-    /** @var array<string, array<string, string>> */
-    protected $countryNamesByLocale = [];
+    /**
+     * Resolved once per list, so each list follows the current app locale.
+     *
+     * @var string|null
+     */
+    protected $listCountryLocale = null;
+
+    /** @var array<string, array<string, string|null>> */
+    protected $countryNames = [];
+
+    /** @var array<string, string>|null */
+    protected $isoCountryNames = null;
 
     public function includeGeneral(bool $include = true): self
     {
@@ -56,13 +67,18 @@ class Timezones
     public function showCountry(bool $show = true, ?string $locale = null): self
     {
         $this->showCountry = $show;
-        $this->countryLocale = $locale;
+
+        if ($locale !== null) {
+            $this->countryLocale = $locale;
+        }
 
         return $this;
     }
 
     public function toArray(bool $grouped = false, bool $htmlencode = true): array
     {
+        $this->listCountryLocale = null;
+
         if ($grouped) {
             return $this->toArrayGrouped($htmlencode);
         }
@@ -220,6 +236,8 @@ class Timezones
      */
     public function toArrayWithContinents(bool $htmlencode = true): array
     {
+        $this->listCountryLocale = null;
+
         $list = [];
 
         foreach ($this->loadContinents() as $continent => $timezoneGroup) {
@@ -295,7 +313,11 @@ class Timezones
             return null;
         }
 
-        return $this->countryNames(locale: $this->resolveCountryLocale())[$location['country_code']] ?? null;
+        $countryCode = $location['country_code'];
+        $locale = $this->listCountryLocale ??= $this->resolveCountryLocale();
+
+        return $this->countryNames[$locale][$countryCode]
+            ??= $this->localizedCountryName($countryCode, $locale) ?? $this->isoCountryName($countryCode);
     }
 
     protected function formatCountryName(string $countryName, bool $htmlencode = true): string
@@ -305,35 +327,23 @@ class Timezones
 
     protected function resolveCountryLocale(): string
     {
-        if ($this->countryLocale !== null) {
-            return $this->countryLocale;
+        $locale = $this->countryLocale ?? $this->appLocale();
+
+        if (! $this->intlIsAvailable()) {
+            return $locale;
         }
 
-        if (function_exists('app') && app()->bound('config')) {
-            return app()->getLocale();
-        }
+        // For a language it has no data for, ICU falls back to the server's default locale instead of English.
+        $languageIsKnown = in_array(Locale::getPrimaryLanguage($locale), ResourceBundle::getLocales('') ?: [], true);
 
-        return 'en';
+        return $languageIsKnown ? $locale : 'en';
     }
 
-    /**
-     * @return array<string, string>
-     */
-    protected function countryNames(string $locale): array
+    protected function appLocale(): string
     {
-        if (isset($this->countryNamesByLocale[$locale])) {
-            return $this->countryNamesByLocale[$locale];
-        }
+        $locale = function_exists('app') && app()->bound('config') ? config('app.locale') : null;
 
-        $names = array_column((new ISO3166)->all(), 'name', 'alpha2');
-
-        if ($this->intlIsAvailable()) {
-            foreach ($names as $countryCode => $name) {
-                $names[$countryCode] = $this->localizedCountryName($countryCode, $locale) ?? $name;
-            }
-        }
-
-        return $this->countryNamesByLocale[$locale] = $names;
+        return is_string($locale) && $locale !== '' ? $locale : 'en';
     }
 
     protected function intlIsAvailable(): bool
@@ -343,9 +353,20 @@ class Timezones
 
     protected function localizedCountryName(string $countryCode, string $locale): ?string
     {
+        if (! $this->intlIsAvailable()) {
+            return null;
+        }
+
         $name = Locale::getDisplayRegion('-'.$countryCode, $locale);
 
         // ICU returns the code itself for a region it has no name for.
         return $name === false || $name === '' || $name === $countryCode ? null : $name;
+    }
+
+    protected function isoCountryName(string $countryCode): ?string
+    {
+        $this->isoCountryNames ??= array_column((new ISO3166)->all(), 'name', 'alpha2');
+
+        return $this->isoCountryNames[$countryCode] ?? null;
     }
 }

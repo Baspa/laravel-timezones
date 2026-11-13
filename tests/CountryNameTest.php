@@ -14,41 +14,122 @@ function timezonesWithoutIntl(): Timezones
     };
 }
 
-it('shows short country names', function () {
-    $list = (new Timezones)->showCountry()->showOffset(false)->toArray();
+describe('with intl', function () {
+    beforeEach(function () {
+        if (! extension_loaded('intl')) {
+            $this->markTestSkipped('Requires ext-intl.');
+        }
+    });
 
-    expect($list['Europe/London'])->toBe('London (United Kingdom)')
-        ->and($list['America/La_Paz'])->toBe('La Paz (Bolivia)');
-});
+    it('shows short country names', function () {
+        $timezones = (new Timezones)->showCountry()->showOffset(false);
 
-it('shows country names in the app locale', function () {
-    app()->setLocale('nl');
+        expect($timezones->toArray()['Europe/London'])->toBe('London (United Kingdom)')
+            ->and($timezones->toArray()['America/La_Paz'])->toBe('La Paz (Bolivia)')
+            ->and($timezones->toArrayWithContinents()['America/New_York'])->toBe('America / New York (United States)');
+    });
 
-    $list = (new Timezones)->showCountry()->showOffset(false)->toArray();
+    it('shows country names in the app locale', function () {
+        app()->setLocale('nl');
 
-    expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)')
-        ->and($list['Europe/London'])->toBe('London (Verenigd Koninkrijk)');
-});
+        $list = (new Timezones)->showCountry()->showOffset(false)->toArray();
 
-it('shows country names in a given locale', function () {
-    app()->setLocale('de');
+        expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)')
+            ->and($list['Europe/London'])->toBe('London (Verenigd Koninkrijk)');
+    });
 
-    $list = (new Timezones)->showCountry(locale: 'nl')->showOffset(false)->toArray();
+    it('shows country names in a given locale', function () {
+        app()->setLocale('de');
 
-    expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)');
-});
+        $list = (new Timezones)->showCountry(locale: 'nl')->showOffset(false)->toArray();
 
-it('follows the app locale when it changes between calls', function () {
-    $timezones = (new Timezones)->showCountry()->showOffset(false);
+        expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)');
+    });
 
-    app()->setLocale('nl');
-    $dutch = $timezones->toArray();
+    it('keeps a given locale when showCountry is called again without one', function () {
+        $list = (new Timezones)->showCountry(locale: 'nl')->showCountry()->showOffset(false)->toArray();
 
-    app()->setLocale('en');
-    $english = $timezones->toArray();
+        expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)');
+    });
 
-    expect($dutch['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)')
-        ->and($english['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)');
+    it('keeps the script of a locale ICU resolves itself', function () {
+        $list = (new Timezones)->showCountry(locale: 'zh_TW')->showOffset(false)->toArray();
+
+        expect($list['Europe/Amsterdam'])->toBe('Amsterdam (荷蘭)');
+    });
+
+    it('follows the app locale when it changes between calls', function () {
+        $timezones = (new Timezones)->showCountry()->showOffset(false);
+
+        app()->setLocale('nl');
+        $dutch = $timezones->toArray();
+
+        app()->setLocale('en');
+        $english = $timezones->toArray();
+
+        expect($dutch['Europe/Amsterdam'])->toBe('Amsterdam (Nederland)')
+            ->and($english['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)');
+    });
+
+    it('uses english for a locale ICU has no data for', function () {
+        $timezones = new class extends Timezones
+        {
+            public function exposedResolveCountryLocale(): string
+            {
+                return $this->resolveCountryLocale();
+            }
+        };
+
+        $timezones->showCountry(locale: 'xx')->showOffset(false);
+
+        expect($timezones->exposedResolveCountryLocale())->toBe('en')
+            ->and($timezones->toArray()['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)');
+    });
+
+    it('does not use a region name that intl does not know', function () {
+        $timezones = new class extends Timezones
+        {
+            public function exposedLocalizedCountryName(string $countryCode, string $locale): ?string
+            {
+                return $this->localizedCountryName($countryCode, $locale);
+            }
+        };
+
+        expect($timezones->exposedLocalizedCountryName('QQ', 'en'))->toBeNull()
+            ->and($timezones->exposedLocalizedCountryName('NL', 'en'))->toBe('Netherlands');
+    });
+
+    it('does not look up the official names when intl has a name', function () {
+        $timezones = new class extends Timezones
+        {
+            public int $isoLookups = 0;
+
+            protected function isoCountryName(string $countryCode): ?string
+            {
+                $this->isoLookups++;
+
+                return parent::isoCountryName($countryCode);
+            }
+        };
+
+        $timezones->showCountry()->toArray();
+
+        expect($timezones->isoLookups)->toBe(0);
+    });
+
+    it('html-escapes country names in html output', function () {
+        $timezones = (new Timezones)->showCountry()->showOffset(false);
+
+        expect($timezones->toArray()['Europe/Sarajevo'])->toBe('Sarajevo (Bosnia &amp; Herzegovina)')
+            ->and($timezones->toArrayWithContinents()['Europe/Sarajevo'])->toBe('Europe / Sarajevo (Bosnia &amp; Herzegovina)');
+    });
+
+    it('does not escape country names in plain output', function () {
+        $timezones = (new Timezones)->showCountry()->showOffset(false);
+
+        expect($timezones->toArray(htmlencode: false)['Europe/Sarajevo'])->toBe('Sarajevo (Bosnia & Herzegovina)')
+            ->and($timezones->toArrayWithContinents(htmlencode: false)['Europe/Sarajevo'])->toBe('Europe / Sarajevo (Bosnia & Herzegovina)');
+    });
 });
 
 it('shows english country names outside a booted app', function () {
@@ -63,36 +144,37 @@ it('shows english country names outside a booted app', function () {
     expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)');
 });
 
+it('shows english country names when the app locale is not set', function () {
+    config()->set('app.locale', null);
+
+    $list = (new Timezones)->showCountry()->showOffset(false)->toArray();
+
+    expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)');
+});
+
+it('resolves the locale once per list', function () {
+    $timezones = new class extends Timezones
+    {
+        public int $localeResolutions = 0;
+
+        protected function resolveCountryLocale(): string
+        {
+            $this->localeResolutions++;
+
+            return parent::resolveCountryLocale();
+        }
+    };
+
+    $timezones->showCountry()->toArray();
+    $timezones->toArray(grouped: true);
+    $timezones->toArrayWithContinents();
+
+    expect($timezones->localeResolutions)->toBe(3);
+});
+
 it('falls back to the official english names without intl', function () {
     $list = timezonesWithoutIntl()->showCountry(locale: 'nl')->showOffset(false)->toArray();
 
     expect($list['Europe/Amsterdam'])->toBe('Amsterdam (Netherlands)')
         ->and($list['Europe/London'])->toBe('London (United Kingdom of Great Britain and Northern Ireland)');
-});
-
-it('does not use a region name that intl does not know', function () {
-    $timezones = new class extends Timezones
-    {
-        public function exposedLocalizedCountryName(string $countryCode, string $locale): ?string
-        {
-            return $this->localizedCountryName($countryCode, $locale);
-        }
-    };
-
-    expect($timezones->exposedLocalizedCountryName('QQ', 'en'))->toBeNull()
-        ->and($timezones->exposedLocalizedCountryName('NL', 'en'))->toBe('Netherlands');
-});
-
-it('html-escapes country names in html output', function () {
-    $timezones = (new Timezones)->showCountry()->showOffset(false);
-
-    expect($timezones->toArray()['Europe/Sarajevo'])->toBe('Sarajevo (Bosnia &amp; Herzegovina)')
-        ->and($timezones->toArrayWithContinents()['Europe/Sarajevo'])->toBe('Europe / Sarajevo (Bosnia &amp; Herzegovina)');
-});
-
-it('does not escape country names in plain output', function () {
-    $timezones = (new Timezones)->showCountry()->showOffset(false);
-
-    expect($timezones->toArray(htmlencode: false)['Europe/Sarajevo'])->toBe('Sarajevo (Bosnia & Herzegovina)')
-        ->and($timezones->toArrayWithContinents(htmlencode: false)['Europe/Sarajevo'])->toBe('Europe / Sarajevo (Bosnia & Herzegovina)');
 });
