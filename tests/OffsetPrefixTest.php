@@ -55,3 +55,22 @@ it('leaves the offset prefix raw in plain text mode', function () {
     expect($timezones->toArray(htmlencode: false)['Asia/Tokyo'])
         ->toBe('(<b>"UTC"</b> & \'Z\' + 09:00) Tokyo');
 });
+
+it('trims the offset prefix so a blank prefix leaves it out', function () {
+    expect((new Timezones)->offsetPrefix('  ')->toArray(htmlencode: false)['Asia/Tokyo'])->toBe('(+ 09:00) Tokyo')
+        ->and((new Timezones)->offsetPrefix(' UTC ')->toArray(htmlencode: false)['Asia/Tokyo'])->toBe('(UTC + 09:00) Tokyo');
+});
+
+it('resets to the default offset prefix when called without an argument', function () {
+    $timezones = (new Timezones)->offsetPrefix('UTC')->offsetPrefix();
+
+    expect($timezones->toArray(htmlencode: false)['Asia/Tokyo'])->toBe('('.Timezones::DEFAULT_OFFSET_PREFIX.' + 09:00) Tokyo');
+});
+
+it('keeps an offset prefix with invalid UTF-8 in html mode', function () {
+    $label = (new Timezones)->offsetPrefix("UTC\xff")->toArray()['Asia/Tokyo'];
+
+    expect($label)->toStartWith('(UTC')
+        ->and($label)->toContain("\u{FFFD}")
+        ->and($label)->not->toStartWith('(&#160;');
+});

@@ -85,7 +85,7 @@ $timezones = Timezones::sortByOffset()->toArray();
 This also works for `toArrayWithContinents()` and for `toArray(grouped: true)`, where each continent is sorted on its own and the order of the continents stays the same. General timezones (UTC and GMT) are sorted as UTC+00:00.
 
 ### Offset prefix
-The offset starts with `GMT/UTC` by default. Use the `offsetPrefix` method to change it, or pass an empty string to leave it out. In HTML mode the prefix is escaped with `htmlspecialchars`.
+The offset starts with `GMT/UTC` by default. Use the `offsetPrefix` method to change it, pass an empty string to leave it out, or call it without an argument to go back to the default. In HTML mode the prefix is escaped with `htmlspecialchars`.
 
 ```php
 Timezones::offsetPrefix('UTC')->toArray(htmlencode: false)['Asia/Tokyo'];

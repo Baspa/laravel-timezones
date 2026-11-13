@@ -13,6 +13,8 @@ use ResourceBundle;
 
 class Timezones
 {
+    public const DEFAULT_OFFSET_PREFIX = 'GMT/UTC';
+
     /** @var array<string, int> */
     protected $continents = [
         'Africa' => DateTimeZone::AFRICA,
@@ -40,7 +42,7 @@ class Timezones
     protected $showOffset = true;
 
     /** @var string */
-    protected $offsetPrefix = 'GMT/UTC';
+    protected $offsetPrefix = self::DEFAULT_OFFSET_PREFIX;
 
     /** @var bool */
     protected $includeGeneralTimezones = false;
@@ -228,9 +230,9 @@ class Timezones
         return $this;
     }
 
-    public function offsetPrefix(string $prefix): self
+    public function offsetPrefix(string $prefix = self::DEFAULT_OFFSET_PREFIX): self
     {
-        $this->offsetPrefix = $prefix;
+        $this->offsetPrefix = trim($prefix);
 
         return $this;
     }
@@ -256,7 +258,7 @@ class Timezones
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
+                $normalizedTimezone = $normalizedTimezone.' ('.$this->escape(value: $countryName, htmlencode: $htmlencode).')';
             }
         }
 
@@ -300,9 +302,7 @@ class Timezones
             return '';
         }
 
-        $prefix = $htmlencode ? htmlspecialchars($this->offsetPrefix, ENT_QUOTES) : $this->offsetPrefix;
-
-        return $prefix.$this->formatSeparator(htmlencode: $htmlencode);
+        return $this->escape(value: $this->offsetPrefix, htmlencode: $htmlencode).$this->formatSeparator(htmlencode: $htmlencode);
     }
 
     protected function getOffset(string $timezone): string
@@ -343,9 +343,9 @@ class Timezones
             ??= $this->localizedCountryName($countryCode, $locale) ?? $this->isoCountryName($countryCode);
     }
 
-    protected function formatCountryName(string $countryName, bool $htmlencode = true): string
+    protected function escape(string $value, bool $htmlencode = true): string
     {
-        return $htmlencode ? htmlspecialchars($countryName, ENT_QUOTES) : $countryName;
+        return $htmlencode ? htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE) : $value;
     }
 
     protected function resolveCountryLocale(): string
