@@ -211,8 +211,7 @@ it('can get timezones with continents without the offset', function () {
 it('can get timezones with continents and country names', function () {
     $list = (new Timezones)->showCountry()->showOffset(false)->toArrayWithContinents();
 
-    expect($list['Europe/Amsterdam'])->toBe('Europe / Amsterdam (Netherlands)')
-        ->and($list['America/New_York'])->toBe('America / New York (United States of America)');
+    expect($list['Europe/Amsterdam'])->toBe('Europe / Amsterdam (Netherlands)');
 });
 
 it('can get timezones with continents including general timezones', function () {

@@ -4,8 +4,12 @@ namespace Baspa\Timezones;
 
 use Baspa\Timezones\Enums\HtmlEntity;
 use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
+use Exception;
 use League\ISO3166\ISO3166;
+use Locale;
+use ResourceBundle;
 
 class Timezones
 {
@@ -23,6 +27,12 @@ class Timezones
         'Pacific' => DateTimeZone::PACIFIC,
     ];
 
+    /** @var list<string>|null */
+    protected ?array $onlyContinents = null;
+
+    /** @var list<string> */
+    protected array $excludedContinents = [];
+
     /** @var array<string, string> */
     protected $timezones = [];
 
@@ -38,6 +48,25 @@ class Timezones
     /** @var bool */
     protected $showCountry = false;
 
+    /** @var string|null */
+    protected $countryLocale = null;
+
+    /**
+     * Resolved once per list, so each list follows the current app locale.
+     *
+     * @var string|null
+     */
+    protected $listCountryLocale = null;
+
+    /** @var array<string, array<string, string|null>> */
+    protected $countryNames = [];
+
+    /** @var array<string, string>|null */
+    protected $isoCountryNames = null;
+
+    /** @var bool */
+    protected $sortByOffset = false;
+
     public function includeGeneral(bool $include = true): self
     {
         $this->includeGeneralTimezones = $include;
@@ -45,15 +74,50 @@ class Timezones
         return $this;
     }
 
-    public function showCountry(bool $show = true): self
+    public function showCountry(bool $show = true, ?string $locale = null): self
     {
         $this->showCountry = $show;
+
+        if ($locale !== null) {
+            $this->countryLocale = $locale;
+        }
 
         return $this;
     }
 
+    public function sortByOffset(bool $sort = true): self
+    {
+        $this->sortByOffset = $sort;
+
+        return $this;
+    }
+
+    /**
+     * @param  array<string, string>  $list
+     * @return array<string, string>
+     */
+    private function applyOffsetSort(array $list): array
+    {
+        if (! $this->sortByOffset) {
+            return $list;
+        }
+
+        $now = new DateTimeImmutable;
+        $offsets = [];
+
+        foreach (array_keys($list) as $timezone) {
+            $offsets[$timezone] = (new DateTimeZone($timezone))->getOffset($now);
+        }
+
+        uksort($list, fn (string $a, string $b): int => $offsets[$a] <=> $offsets[$b] ?: strcmp($a, $b));
+
+        return $list;
+    }
+
     public function toArray(bool $grouped = false, bool $htmlencode = true): array
     {
+        $this->listCountryLocale = null;
+
         if ($grouped) {
             return $this->toArrayGrouped($htmlencode);
         }
@@ -82,7 +146,7 @@ class Timezones
             $list['General']['GMT'] = 'GMT';
         }
 
-        return $list;
+        return array_map($this->applyOffsetSort(...), $list);
     }
 
     private function toArrayUngrouped(bool $htmlencode = true, bool $withContinents = false): array
@@ -106,17 +170,55 @@ class Timezones
             $list['GMT'] = 'GMT';
         }
 
-        return $list;
+        return $this->applyOffsetSort($list);
     }
 
     public function excludeContinents(array $continents): self
     {
-        $this->continents = array_diff_key(
-            $this->continents,
-            array_flip(array: $continents)
-        );
+        $this->excludedContinents = [
+            ...$this->excludedContinents,
+            ...$this->resolveContinentNames($continents),
+        ];
 
         return $this;
+    }
+
+    public function onlyContinents(array $continents): self
+    {
+        if ($continents === []) {
+            throw new \InvalidArgumentException('Pass at least one continent to onlyContinents().');
+        }
+
+        $this->onlyContinents = $this->resolveContinentNames($continents);
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveContinentNames(array $names): array
+    {
+        $validNames = array_keys($this->continents);
+        $validNamesByLowercase = array_combine(array_map(strtolower(...), $validNames), $validNames);
+        $resolvedNames = [];
+
+        foreach ($names as $name) {
+            if (! is_string($name)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Continent names must be strings like "Europe", %s given.',
+                    get_debug_type($name)
+                ));
+            }
+
+            $resolvedNames[] = $validNamesByLowercase[strtolower($name)] ?? throw new \InvalidArgumentException(sprintf(
+                'Unknown continent "%s". Valid continents are: %s.',
+                $name,
+                implode(', ', $validNames)
+            ));
+        }
+
+        return $resolvedNames;
     }
 
     public function showOffset(bool $showOffset = true): self
@@ -136,7 +238,11 @@ class Timezones
     /** @return array<string, int> */
     protected function loadContinents(): array
     {
-        return $this->continents;
+        $continents = $this->onlyContinents === null
+            ? $this->continents
+            : array_intersect_key($this->continents, array_flip($this->onlyContinents));
+
+        return array_diff_key($continents, array_flip($this->excludedContinents));
     }
 
     protected function formatTimezone(string $timezone, ?string $cutOffContinent = null, bool $htmlencode = true): string
@@ -150,7 +256,7 @@ class Timezones
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$countryName.')';
+                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
             }
         }
 
@@ -213,29 +319,77 @@ class Timezones
      */
     public function toArrayWithContinents(bool $htmlencode = true): array
     {
+        $this->listCountryLocale = null;
+
         return $this->toArrayUngrouped(htmlencode: $htmlencode, withContinents: true);
     }
 
-    /**
-     * Get the country name for a timezone using ISO 3166
-     */
     protected function getCountryName(string $timezone): ?string
     {
         try {
-            $tz = new DateTimeZone($timezone);
-            $location = $tz->getLocation();
-            $countryCode = $location['country_code'] ?? null;
-
-            if (! $countryCode) {
-                return null;
-            }
-
-            $iso3166 = new ISO3166;
-            $country = $iso3166->alpha2($countryCode);
-
-            return $country['name'];
-        } catch (\Exception $e) {
+            $location = (new DateTimeZone($timezone))->getLocation();
+        } catch (Exception) {
             return null;
         }
+
+        if ($location === false) {
+            return null;
+        }
+
+        $countryCode = $location['country_code'];
+        $locale = $this->listCountryLocale ??= $this->resolveCountryLocale();
+
+        return $this->countryNames[$locale][$countryCode]
+            ??= $this->localizedCountryName($countryCode, $locale) ?? $this->isoCountryName($countryCode);
+    }
+
+    protected function formatCountryName(string $countryName, bool $htmlencode = true): string
+    {
+        return $htmlencode ? htmlspecialchars($countryName, ENT_QUOTES) : $countryName;
+    }
+
+    protected function resolveCountryLocale(): string
+    {
+        $locale = $this->countryLocale ?? $this->appLocale();
+
+        if (! $this->intlIsAvailable()) {
+            return $locale;
+        }
+
+        // For a language it has no data for, ICU falls back to the server's default locale instead of English.
+        $languageIsKnown = in_array(Locale::getPrimaryLanguage($locale), ResourceBundle::getLocales('') ?: [], true);
+
+        return $languageIsKnown ? $locale : 'en';
+    }
+
+    protected function appLocale(): string
+    {
+        $locale = function_exists('app') && app()->bound('config') ? config('app.locale') : null;
+
+        return is_string($locale) && $locale !== '' ? $locale : 'en';
+    }
+
+    protected function intlIsAvailable(): bool
+    {
+        return class_exists(Locale::class);
+    }
+
+    protected function localizedCountryName(string $countryCode, string $locale): ?string
+    {
+        if (! $this->intlIsAvailable()) {
+            return null;
+        }
+
+        $name = Locale::getDisplayRegion('-'.$countryCode, $locale);
+
+        // ICU returns the code itself for a region it has no name for.
+        return $name === false || $name === '' || $name === $countryCode ? null : $name;
+    }
+
+    protected function isoCountryName(string $countryCode): ?string
+    {
+        $this->isoCountryNames ??= array_column((new ISO3166)->all(), 'name', 'alpha2');
+
+        return $this->isoCountryNames[$countryCode] ?? null;
     }
 }
