@@ -16,7 +16,7 @@
         }
     ],
     "require": {
-        "php": "^8.2|^8.3|^8.4",
+        "php": "^8.2",
         "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
         "league/iso3166": "^4.3",
         "spatie/laravel-package-tools": "^1.14.0"
@@ -36,29 +36,18 @@
     },
     "autoload": {
         "psr-4": {
-            "Baspa\\Timezones\\": "src/",
-            "Baspa\\Timezones\\Database\\Factories\\": "database/factories/"
+            "Baspa\\Timezones\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Baspa\\Timezones\\Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/"
+            "Baspa\\Timezones\\Tests\\": "tests/"
         }
     },
     "scripts": {
         "post-autoload-dump": "@composer run prepare",
         "clear": "@php vendor/bin/testbench package:purge-laravel-timezones --ansi",
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
-        "build": [
-            "@composer run prepare",
-            "@php vendor/bin/testbench workbench:build --ansi"
-        ],
-        "start": [
-            "Composer\\Config::disableProcessTimeout",
-            "@composer run build",
-            "@php vendor/bin/testbench serve"
-        ],
         "analyse": "vendor/bin/phpstan analyse",
         "test": "vendor/bin/pest --no-coverage",
         "test-coverage": "vendor/bin/pest --coverage",
