@@ -45,13 +45,27 @@ Timezones::toArray(htmlencode: false)['Asia/Tokyo'];
 // "(GMT/UTC + 09:00) Tokyo"
 ```
 
-### Exclude continents
+### Filter continents
+Use `excludeContinents` to drop continents, or `onlyContinents` to keep just the ones you list. Both can be chained and work with every output method.
+
 ```php
 use Baspa\Timezones\Facades\Timezones;
 // 
 $timezones = Timezones::excludeContinents(['Africa', 'America'])
     ->toArray();
+
+$timezones = Timezones::onlyContinents(['Europe', 'Asia'])
+    ->toArray(grouped: true);
+
+// Europe only
+$timezones = Timezones::onlyContinents(['Europe', 'Asia'])
+    ->excludeContinents(['Asia'])
+    ->toArray();
 ```
+
+A second `onlyContinents` call replaces the first, while `excludeContinents` calls add up. The order of the calls doesn't matter.
+
+Continent names are case-insensitive (`'europe'` and `'EUROPE'` both match `Europe`). The output keeps the original continent order, whatever order you pass the names in. An unknown name, a value that isn't a string, or an empty `onlyContinents([])` throws an `InvalidArgumentException`. The valid names are `Africa`, `America`, `Antarctica`, `Arctic`, `Asia`, `Atlantic`, `Australia`, `Europe`, `Indian` and `Pacific`.
 
 ### Show offset
 ```php

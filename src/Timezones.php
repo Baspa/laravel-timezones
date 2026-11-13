@@ -23,6 +23,12 @@ class Timezones
         'Pacific' => DateTimeZone::PACIFIC,
     ];
 
+    /** @var list<string>|null */
+    protected ?array $onlyContinents = null;
+
+    /** @var list<string> */
+    protected array $excludedContinents = [];
+
     /** @var array<string, string> */
     protected $timezones = [];
 
@@ -111,12 +117,50 @@ class Timezones
 
     public function excludeContinents(array $continents): self
     {
-        $this->continents = array_diff_key(
-            $this->continents,
-            array_flip(array: $continents)
-        );
+        $this->excludedContinents = [
+            ...$this->excludedContinents,
+            ...$this->resolveContinentNames($continents),
+        ];
 
         return $this;
+    }
+
+    public function onlyContinents(array $continents): self
+    {
+        if ($continents === []) {
+            throw new \InvalidArgumentException('Pass at least one continent to onlyContinents().');
+        }
+
+        $this->onlyContinents = $this->resolveContinentNames($continents);
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveContinentNames(array $names): array
+    {
+        $validNames = array_keys($this->continents);
+        $validNamesByLowercase = array_combine(array_map(strtolower(...), $validNames), $validNames);
+        $resolvedNames = [];
+
+        foreach ($names as $name) {
+            if (! is_string($name)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Continent names must be strings like "Europe", %s given.',
+                    get_debug_type($name)
+                ));
+            }
+
+            $resolvedNames[] = $validNamesByLowercase[strtolower($name)] ?? throw new \InvalidArgumentException(sprintf(
+                'Unknown continent "%s". Valid continents are: %s.',
+                $name,
+                implode(', ', $validNames)
+            ));
+        }
+
+        return $resolvedNames;
     }
 
     public function showOffset(bool $showOffset = true): self
@@ -129,7 +173,11 @@ class Timezones
     /** @return array<string, int> */
     protected function loadContinents(): array
     {
-        return $this->continents;
+        $continents = $this->onlyContinents === null
+            ? $this->continents
+            : array_intersect_key($this->continents, array_flip($this->onlyContinents));
+
+        return array_diff_key($continents, array_flip($this->excludedContinents));
     }
 
     protected function formatTimezone(string $timezone, ?string $cutOffContinent = null, bool $htmlencode = true): string
