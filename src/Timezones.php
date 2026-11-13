@@ -5,7 +5,10 @@ namespace Baspa\Timezones;
 use Baspa\Timezones\Enums\HtmlEntity;
 use DateTime;
 use DateTimeZone;
+use Exception;
 use League\ISO3166\ISO3166;
+use Locale;
+use ResourceBundle;
 
 class Timezones
 {
@@ -44,6 +47,22 @@ class Timezones
     /** @var bool */
     protected $showCountry = false;
 
+    /** @var string|null */
+    protected $countryLocale = null;
+
+    /**
+     * Resolved once per list, so each list follows the current app locale.
+     *
+     * @var string|null
+     */
+    protected $listCountryLocale = null;
+
+    /** @var array<string, array<string, string|null>> */
+    protected $countryNames = [];
+
+    /** @var array<string, string>|null */
+    protected $isoCountryNames = null;
+
     public function includeGeneral(bool $include = true): self
     {
         $this->includeGeneralTimezones = $include;
@@ -51,15 +70,21 @@ class Timezones
         return $this;
     }
 
-    public function showCountry(bool $show = true): self
+    public function showCountry(bool $show = true, ?string $locale = null): self
     {
         $this->showCountry = $show;
+
+        if ($locale !== null) {
+            $this->countryLocale = $locale;
+        }
 
         return $this;
     }
 
     public function toArray(bool $grouped = false, bool $htmlencode = true): array
     {
+        $this->listCountryLocale = null;
+
         if ($grouped) {
             return $this->toArrayGrouped($htmlencode);
         }
@@ -191,7 +216,7 @@ class Timezones
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$countryName.')';
+                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
             }
         }
 
@@ -243,29 +268,77 @@ class Timezones
      */
     public function toArrayWithContinents(bool $htmlencode = true): array
     {
+        $this->listCountryLocale = null;
+
         return $this->toArrayUngrouped(htmlencode: $htmlencode, withContinents: true);
     }
 
-    /**
-     * Get the country name for a timezone using ISO 3166
-     */
     protected function getCountryName(string $timezone): ?string
     {
         try {
-            $tz = new DateTimeZone($timezone);
-            $location = $tz->getLocation();
-            $countryCode = $location['country_code'] ?? null;
-
-            if (! $countryCode) {
-                return null;
-            }
-
-            $iso3166 = new ISO3166;
-            $country = $iso3166->alpha2($countryCode);
-
-            return $country['name'];
-        } catch (\Exception $e) {
+            $location = (new DateTimeZone($timezone))->getLocation();
+        } catch (Exception) {
             return null;
         }
+
+        if ($location === false) {
+            return null;
+        }
+
+        $countryCode = $location['country_code'];
+        $locale = $this->listCountryLocale ??= $this->resolveCountryLocale();
+
+        return $this->countryNames[$locale][$countryCode]
+            ??= $this->localizedCountryName($countryCode, $locale) ?? $this->isoCountryName($countryCode);
+    }
+
+    protected function formatCountryName(string $countryName, bool $htmlencode = true): string
+    {
+        return $htmlencode ? htmlspecialchars($countryName, ENT_QUOTES) : $countryName;
+    }
+
+    protected function resolveCountryLocale(): string
+    {
+        $locale = $this->countryLocale ?? $this->appLocale();
+
+        if (! $this->intlIsAvailable()) {
+            return $locale;
+        }
+
+        // For a language it has no data for, ICU falls back to the server's default locale instead of English.
+        $languageIsKnown = in_array(Locale::getPrimaryLanguage($locale), ResourceBundle::getLocales('') ?: [], true);
+
+        return $languageIsKnown ? $locale : 'en';
+    }
+
+    protected function appLocale(): string
+    {
+        $locale = function_exists('app') && app()->bound('config') ? config('app.locale') : null;
+
+        return is_string($locale) && $locale !== '' ? $locale : 'en';
+    }
+
+    protected function intlIsAvailable(): bool
+    {
+        return class_exists(Locale::class);
+    }
+
+    protected function localizedCountryName(string $countryCode, string $locale): ?string
+    {
+        if (! $this->intlIsAvailable()) {
+            return null;
+        }
+
+        $name = Locale::getDisplayRegion('-'.$countryCode, $locale);
+
+        // ICU returns the code itself for a region it has no name for.
+        return $name === false || $name === '' || $name === $countryCode ? null : $name;
+    }
+
+    protected function isoCountryName(string $countryCode): ?string
+    {
+        $this->isoCountryNames ??= array_column((new ISO3166)->all(), 'name', 'alpha2');
+
+        return $this->isoCountryNames[$countryCode] ?? null;
     }
 }
