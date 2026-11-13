@@ -54,7 +54,7 @@ By default timezones are sorted alphabetically. Use the `sortByOffset` method to
 
 ```php
 $timezones = Timezones::sortByOffset()->toArray();
-// Keys: Pacific/Midway, Pacific/Niue, Pacific/Pago_Pago, America/Adak, ..., Pacific/Kiritimati
+// Keys: Pacific/Midway, Pacific/Niue, Pacific/Pago_Pago (UTC-11), ..., Pacific/Kiritimati (UTC+14)
 ```
 
 This also works for `toArrayWithContinents()` and for `toArray(grouped: true)`, where each continent is sorted on its own and the order of the continents stays the same. General timezones (UTC and GMT) are sorted as UTC+00:00.
