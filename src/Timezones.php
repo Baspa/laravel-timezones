@@ -26,6 +26,12 @@ class Timezones
         'Pacific' => DateTimeZone::PACIFIC,
     ];
 
+    /** @var list<string>|null */
+    protected ?array $onlyContinents = null;
+
+    /** @var list<string> */
+    protected array $excludedContinents = [];
+
     /** @var array<string, string> */
     protected $timezones = [];
 
@@ -110,7 +116,7 @@ class Timezones
         return $list;
     }
 
-    private function toArrayUngrouped(bool $htmlencode = true): array
+    private function toArrayUngrouped(bool $htmlencode = true, bool $withContinents = false): array
     {
         $list = [];
 
@@ -120,7 +126,7 @@ class Timezones
             foreach ($timezones as $timezone) {
                 $list[$timezone] = $this->formatTimezone(
                     timezone: $timezone,
-                    cutOffContinent: $continent,
+                    cutOffContinent: $withContinents ? null : $continent,
                     htmlencode: $htmlencode
                 );
             }
@@ -136,12 +142,50 @@ class Timezones
 
     public function excludeContinents(array $continents): self
     {
-        $this->continents = array_diff_key(
-            $this->continents,
-            array_flip(array: $continents)
-        );
+        $this->excludedContinents = [
+            ...$this->excludedContinents,
+            ...$this->resolveContinentNames($continents),
+        ];
 
         return $this;
+    }
+
+    public function onlyContinents(array $continents): self
+    {
+        if ($continents === []) {
+            throw new \InvalidArgumentException('Pass at least one continent to onlyContinents().');
+        }
+
+        $this->onlyContinents = $this->resolveContinentNames($continents);
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function resolveContinentNames(array $names): array
+    {
+        $validNames = array_keys($this->continents);
+        $validNamesByLowercase = array_combine(array_map(strtolower(...), $validNames), $validNames);
+        $resolvedNames = [];
+
+        foreach ($names as $name) {
+            if (! is_string($name)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Continent names must be strings like "Europe", %s given.',
+                    get_debug_type($name)
+                ));
+            }
+
+            $resolvedNames[] = $validNamesByLowercase[strtolower($name)] ?? throw new \InvalidArgumentException(sprintf(
+                'Unknown continent "%s". Valid continents are: %s.',
+                $name,
+                implode(', ', $validNames)
+            ));
+        }
+
+        return $resolvedNames;
     }
 
     public function showOffset(bool $showOffset = true): self
@@ -151,9 +195,14 @@ class Timezones
         return $this;
     }
 
+    /** @return array<string, int> */
     protected function loadContinents(): array
     {
-        return $this->continents;
+        $continents = $this->onlyContinents === null
+            ? $this->continents
+            : array_intersect_key($this->continents, array_flip($this->onlyContinents));
+
+        return array_diff_key($continents, array_flip($this->excludedContinents));
     }
 
     protected function formatTimezone(string $timezone, ?string $cutOffContinent = null, bool $htmlencode = true): string
@@ -164,7 +213,6 @@ class Timezones
 
         $normalizedTimezone = $this->normalizeTimezone(timezone: $displayedTimezone);
 
-        // Add country name if enabled
         if ($this->showCountry) {
             $countryName = $this->getCountryName($timezone);
             if ($countryName) {
@@ -177,32 +225,16 @@ class Timezones
         }
 
         $offset = $this->getOffset($timezone);
+        $sign = substr($offset, 0, 1);
+        $time = substr($offset, 1);
 
-        // Format offset consistently with formatTimezoneWithContinent
-        $search = ['-', '+'];
-        $replace = $htmlencode ? [HtmlEntity::MINUS->value, HtmlEntity::PLUS->value] : ['-', '+'];
-        $formattedSign = str_replace($search, $replace, substr($offset, 0, 1));
-        $timeOffset = substr($offset, 1);
+        if ($htmlencode) {
+            $sign = $sign === '-' ? HtmlEntity::MINUS->value : HtmlEntity::PLUS->value;
+        }
 
-        $normalizedOffset = $htmlencode
-            ? $formattedSign.HtmlEntity::WHITESPACE->value.$timeOffset
-            : $formattedSign.' '.$timeOffset;
+        $space = $this->formatSeparator(htmlencode: $htmlencode);
 
-        $separator = $this->formatSeparator(htmlencode: $htmlencode);
-
-        return '('.$this->offsetPrefix.HtmlEntity::WHITESPACE->value.$normalizedOffset.')'.$separator.$normalizedTimezone;
-    }
-
-    protected function formatOffset(string $offset, bool $htmlencode = true): string
-    {
-        $search = ['-', '+'];
-        $replace = $htmlencode ? [HtmlEntity::MINUS->value, HtmlEntity::PLUS->value] : ['-', '+'];
-
-        return str_replace(
-            search: $search,
-            replace: $replace,
-            subject: $offset
-        );
+        return '('.$this->offsetPrefix.$space.$sign.$space.$time.')'.$space.$normalizedTimezone;
     }
 
     protected function normalizeTimezone(string $timezone): string
@@ -238,67 +270,7 @@ class Timezones
     {
         $this->listCountryLocale = null;
 
-        $list = [];
-
-        foreach ($this->loadContinents() as $continent => $timezoneGroup) {
-            $timezones = DateTimeZone::listIdentifiers(timezoneGroup: $timezoneGroup);
-
-            foreach ($timezones as $timezone) {
-                $list[$timezone] = $this->formatTimezoneWithContinent(
-                    timezone: $timezone,
-                    htmlencode: $htmlencode
-                );
-            }
-        }
-
-        if ($this->includeGeneralTimezones) {
-            $list['UTC'] = 'UTC';
-            $list['GMT'] = 'GMT';
-        }
-
-        return $list;
-    }
-
-    /**
-     * Format timezone string with continent name preserved
-     */
-    protected function formatTimezoneWithContinent(string $timezone, bool $htmlencode = true): string
-    {
-        // Keep the full timezone identifier (e.g., Europe/Amsterdam)
-        $normalizedTimezone = $this->normalizeTimezone(timezone: $timezone);
-
-        // Add country name if enabled
-        if ($this->showCountry) {
-            $countryName = $this->getCountryName($timezone);
-            if ($countryName) {
-                $normalizedTimezone = $normalizedTimezone.' ('.$this->formatCountryName(countryName: $countryName, htmlencode: $htmlencode).')';
-            }
-        }
-
-        if (! $this->showOffset) {
-            return $normalizedTimezone;
-        }
-
-        $offset = $this->getOffset($timezone);
-
-        // Format offset with consistent width - pad the offset to ensure alignment
-        $search = ['-', '+'];
-        $replace = $htmlencode ? [HtmlEntity::MINUS->value, HtmlEntity::PLUS->value] : ['-', '+'];
-        $formattedSign = str_replace($search, $replace, substr($offset, 0, 1));
-        $timeOffset = substr($offset, 1); // Get the time part (e.g., "00:00" or "03:00")
-
-        // Pad the entire offset string to a consistent width (sign + space + HH:MM = 7 chars visible)
-        // Use str_pad to ensure the offset portion is always the same width
-        $offsetString = $formattedSign.HtmlEntity::WHITESPACE->value.$timeOffset;
-
-        // Build with consistent spacing - add extra padding after to ensure alignment
-        $normalizedOffset = $htmlencode
-            ? $offsetString
-            : ' '.$formattedSign.' '.$timeOffset;
-
-        $separator = $this->formatSeparator(htmlencode: $htmlencode);
-
-        return '('.$this->offsetPrefix.HtmlEntity::WHITESPACE->value.$normalizedOffset.')'.$separator.$normalizedTimezone;
+        return $this->toArrayUngrouped(htmlencode: $htmlencode, withContinents: true);
     }
 
     protected function getCountryName(string $timezone): ?string
