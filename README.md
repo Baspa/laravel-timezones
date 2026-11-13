@@ -34,6 +34,17 @@ use Baspa\Timezones\Facades\Timezones;
 $timezones = Timezones::toArray();
 ```
 
+### HTML entities or plain text
+By default the labels contain HTML entities (non-breaking spaces and plus/minus signs), for output that is not escaped, such as `{!! !!}` in Blade. Pass `htmlencode: false` to get plain text for selects that escape their option labels, such as Filament or Livewire. This works for `toArray()` (flat and grouped) and `toArrayWithContinents()`.
+
+```php
+Timezones::toArray()['Asia/Tokyo'];
+// "(GMT/UTC&#160;&#43;&#160;09:00)&#160;Tokyo"
+
+Timezones::toArray(htmlencode: false)['Asia/Tokyo'];
+// "(GMT/UTC + 09:00) Tokyo"
+```
+
 ### Filter continents
 Use `excludeContinents` to drop continents, or `onlyContinents` to keep just the ones you list. Both can be chained and work with every output method.
 
@@ -92,6 +103,23 @@ $timezones = Timezones::showCountry()->toArrayWithContinents();
 $timezones = Timezones::showCountry()->toArray(grouped: true);
 ```
 
+### Validation
+The keys of `toArray()` and `toArrayWithContinents()`, and the keys inside each group of `toArray(grouped: true)`, are timezone identifiers (e.g. `Europe/Amsterdam`). You can validate a submitted value with Laravel's `timezone` rule:
+
+```php
+$request->validate([
+    'timezone' => ['required', 'timezone'],
+]);
+```
+
+`includeGeneral()` adds `GMT`, which the default `timezone` rule rejects. When you include general timezones, use `timezone:all_with_bc` instead (it also accepts other backward-compatible identifiers, such as `US/Eastern`):
+
+```php
+$request->validate([
+    'timezone' => ['required', 'timezone:all_with_bc'],
+]);
+```
+
 ## Testing
 
 ```bash
@@ -104,7 +132,7 @@ Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed re
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Issues and pull requests are welcome on [GitHub](https://github.com/Baspa/laravel-timezones).
 
 ## Credits
 
