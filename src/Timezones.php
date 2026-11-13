@@ -85,7 +85,7 @@ class Timezones
         return $list;
     }
 
-    private function toArrayUngrouped(bool $htmlencode = true): array
+    private function toArrayUngrouped(bool $htmlencode = true, bool $withContinents = false): array
     {
         $list = [];
 
@@ -95,7 +95,7 @@ class Timezones
             foreach ($timezones as $timezone) {
                 $list[$timezone] = $this->formatTimezone(
                     timezone: $timezone,
-                    cutOffContinent: $continent,
+                    cutOffContinent: $withContinents ? null : $continent,
                     htmlencode: $htmlencode
                 );
             }
@@ -126,6 +126,7 @@ class Timezones
         return $this;
     }
 
+    /** @return array<string, int> */
     protected function loadContinents(): array
     {
         return $this->continents;
@@ -194,25 +195,7 @@ class Timezones
      */
     public function toArrayWithContinents(bool $htmlencode = true): array
     {
-        $list = [];
-
-        foreach ($this->loadContinents() as $continent => $timezoneGroup) {
-            $timezones = DateTimeZone::listIdentifiers(timezoneGroup: $timezoneGroup);
-
-            foreach ($timezones as $timezone) {
-                $list[$timezone] = $this->formatTimezone(
-                    timezone: $timezone,
-                    htmlencode: $htmlencode
-                );
-            }
-        }
-
-        if ($this->includeGeneralTimezones) {
-            $list['UTC'] = 'UTC';
-            $list['GMT'] = 'GMT';
-        }
-
-        return $list;
+        return $this->toArrayUngrouped(htmlencode: $htmlencode, withContinents: true);
     }
 
     /**
