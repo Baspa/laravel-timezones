@@ -10,6 +10,17 @@
 
 The Laravel Timezones package is a convenient solution for Laravel developers who need to include a dropdown menu of timezones in their applications. This package simplifies the process of incorporating a timezone selection feature, saving developers valuable time and effort.
 
+## Requirements
+
+- PHP 8.3 or higher
+- Laravel 13
+
+On Laravel 12 or PHP 8.2, use version 2 of this package:
+
+```bash
+composer require baspa/laravel-timezones:^2.0
+```
+
 ## Installation
 
 You can install the package via composer:
