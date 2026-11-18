@@ -22,17 +22,18 @@
         "spatie/laravel-package-tools": "^1.14.0"
     },
     "require-dev": {
-        "larastan/larastan": "^3.0",
+        "larastan/larastan": "^3.15.0",
         "laravel/boost": "^2.4",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^8.5",
         "orchestra/testbench": "^10.0 || ^11.0",
-        "pestphp/pest": "^3.0 || ^4.0",
-        "pestphp/pest-plugin-arch": "^3.0 || ^4.0",
-        "pestphp/pest-plugin-laravel": "^3.0 || ^4.0",
-        "phpstan/extension-installer": "^1.1",
-        "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-phpunit": "^2.0"
+        "pestphp/pest": "^3.0 || ^4.0 || ^5.0",
+        "pestphp/pest-plugin-arch": "^3.0 || ^4.0 || ^5.0",
+        "pestphp/pest-plugin-laravel": "^3.0 || ^4.0 || ^5.0",
+        "phpstan/extension-installer": "^1.4.3",
+        "phpstan/phpstan": "^2.3.6",
+        "phpstan/phpstan-deprecation-rules": "^2.0.5",
+        "phpstan/phpstan-phpunit": "^2.1.2"
     },
     "suggest": {
         "ext-intl": "Needed for short, localized country names"
