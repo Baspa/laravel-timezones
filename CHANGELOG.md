@@ -2,6 +2,26 @@
 
 All notable changes to `laravel-timezones` will be documented in this file.
 
+## v2.1.0 - 2026-11-18
+
+### New
+
+* **PHP 8.6 support.** Tested on PHP 8.6 with Laravel 12 and 13, on Ubuntu and Windows with lowest and stable dependencies. Verified against PHP 8.6.0RC7 and the 8.6 nightly.
+
+### Changes
+
+* `offsetPrefix()` now strips form feeds (`\f`) around the prefix on every PHP version, the way `trim()` does by default from PHP 8.6 on, so the label is the same on every PHP version.
+
+### Development
+
+* Pest 5 is allowed next to Pest 3 and 4, and PHPStan 2.3.6 or newer is required.
+
+### What's Changed
+
+* feat: support PHP 8.6 by @Baspa in https://github.com/Baspa/laravel-timezones/pull/48
+
+**Full Changelog**: https://github.com/Baspa/laravel-timezones/compare/v2.0.0...v2.1.0
+
 ## v2.0.0 - 2026-11-13
 
 ### Breaking changes
