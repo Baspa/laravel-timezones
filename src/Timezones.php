@@ -232,7 +232,8 @@ class Timezones
 
     public function offsetPrefix(string $prefix = self::DEFAULT_OFFSET_PREFIX): self
     {
-        $this->offsetPrefix = trim($prefix);
+        // PHP 8.6's default characters, so older versions strip form feeds too.
+        $this->offsetPrefix = trim($prefix, " \n\r\t\v\0\f");
 
         return $this;
     }

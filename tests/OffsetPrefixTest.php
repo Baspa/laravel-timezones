@@ -61,6 +61,10 @@ it('trims the offset prefix so a blank prefix leaves it out', function () {
         ->and((new Timezones)->offsetPrefix(' UTC ')->toArray(htmlencode: false)['Asia/Tokyo'])->toBe('(UTC + 09:00) Tokyo');
 });
 
+it('trims form feeds from the offset prefix on every PHP version', function () {
+    expect((new Timezones)->offsetPrefix("\fUTC\f")->toArray(htmlencode: false)['Asia/Tokyo'])->toBe('(UTC + 09:00) Tokyo');
+});
+
 it('resets to the default offset prefix when called without an argument', function () {
     $timezones = (new Timezones)->offsetPrefix('UTC')->offsetPrefix();
 
