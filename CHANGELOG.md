@@ -2,6 +2,20 @@
 
 All notable changes to `laravel-timezones` will be documented in this file.
 
+## v3.0.0 - 2026-11-18
+
+### Breaking changes
+
+* **Laravel 12 and PHP 8.2 are no longer supported.** Requires Laravel 13 and PHP 8.3 or newer. Laravel 12 supports PHP up to 8.5 and no longer gets bug fixes; Laravel 13 needs PHP 8.3. On Laravel 12 or PHP 8.2, stay on `^2.0`.
+
+There are no other changes: the API and output are the same as in v2.1.0.
+
+### What's Changed
+
+* feat!: require Laravel 13 and PHP 8.3 by @Baspa in https://github.com/Baspa/laravel-timezones/pull/49
+
+**Full Changelog**: https://github.com/Baspa/laravel-timezones/compare/v2.1.0...v3.0.0
+
 ## v2.1.0 - 2026-11-18
 
 ### New
